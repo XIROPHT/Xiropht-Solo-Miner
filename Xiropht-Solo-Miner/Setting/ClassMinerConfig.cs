@@ -6,7 +6,6 @@
         public int mining_thread;
         public int mining_thread_priority = 2;
         public bool mining_enable_cache = false;
-        public bool mining_save_cache = false;
         public bool mining_thread_spread_job;
         public bool mining_enable_automatic_thread_affinity;
         public string mining_manual_thread_affinity = string.Empty;
@@ -16,5 +15,6 @@
         public int mining_percent_difficulty_start;
         public int mining_percent_difficulty_end;
         public bool mining_show_calculation_speed = false;
+        public bool mining_enable_pow_mining_way = false;
     }
 }

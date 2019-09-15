@@ -79,7 +79,7 @@ namespace Xiropht_Solo_Miner
         private static ClassSeedNodeConnector ObjectSeedNodeNetwork;
 
         private static string CertificateConnection;
-        private static bool IsConnected;
+        public static bool IsConnected;
         public static bool CanMining;
         private static bool LoginAccepted;
         public static int TotalShareAccepted;
@@ -166,6 +166,8 @@ namespace Xiropht_Solo_Miner
                     ClassAlgoMining.AesManagedMining = new AesManaged[ClassMinerConfigObject.mining_thread];
                     ClassAlgoMining.CryptoStreamMining = new CryptoStream[ClassMinerConfigObject.mining_thread];
                     ClassAlgoMining.MemoryStreamMining = new MemoryStream[ClassMinerConfigObject.mining_thread];
+                    ClassAlgoMining.TotalNonceMining = new int[ClassMinerConfigObject.mining_thread];
+
                     TotalMiningHashrateRound = new List<int>();
                     TotalMiningCalculationRound = new List<int>();
                     for (int i = 0; i < ClassMinerConfigObject.mining_thread; i++)
@@ -178,7 +180,7 @@ namespace Xiropht_Solo_Miner
                     }
 
                     ClassConsole.WriteLine("Connecting to the network..", 2);
-                    StartConnectMinerAsync().ConfigureAwait(false);
+                    Task.Factory.StartNew(StartConnectMinerAsync).ConfigureAwait(false);
                 }
                 else
                 {
@@ -209,6 +211,8 @@ namespace Xiropht_Solo_Miner
                         ClassAlgoMining.AesManagedMining = new AesManaged[ClassMinerConfigObject.mining_thread];
                         ClassAlgoMining.CryptoStreamMining = new CryptoStream[ClassMinerConfigObject.mining_thread];
                         ClassAlgoMining.MemoryStreamMining = new MemoryStream[ClassMinerConfigObject.mining_thread];
+                        ClassAlgoMining.TotalNonceMining = new int[ClassMinerConfigObject.mining_thread];
+
                         TotalMiningHashrateRound = new List<int>();
                         TotalMiningCalculationRound = new List<int>();
                         for (int i = 0; i < ClassMinerConfigObject.mining_thread; i++)
@@ -220,8 +224,8 @@ namespace Xiropht_Solo_Miner
                             }
                         }
 
-                        Console.WriteLine("Connecting to the network..");
-                        StartConnectMinerAsync().ConfigureAwait(false);
+                        ClassConsole.WriteLine("Connecting to the network..", 2);
+                        Task.Factory.StartNew(StartConnectMinerAsync).ConfigureAwait(false);
                     }
                     else
                     {
@@ -467,6 +471,7 @@ namespace Xiropht_Solo_Miner
             ClassAlgoMining.AesManagedMining = new AesManaged[ClassMinerConfigObject.mining_thread];
             ClassAlgoMining.CryptoStreamMining = new CryptoStream[ClassMinerConfigObject.mining_thread];
             ClassAlgoMining.MemoryStreamMining = new MemoryStream[ClassMinerConfigObject.mining_thread];
+            ClassAlgoMining.TotalNonceMining = new int [ClassMinerConfigObject.mining_thread];
 
 
             Console.WriteLine("Do you want share job range per thread ? [Y/N]");
@@ -502,8 +507,8 @@ namespace Xiropht_Solo_Miner
                 InitializeMiningCache();
             }
 
-            Console.WriteLine("Start to connect to the network..");
-            StartConnectMinerAsync().ConfigureAwait(false);
+            ClassConsole.WriteLine("Start to connect to the network..", 2);
+            Task.Factory.StartNew(StartConnectMinerAsync).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -750,7 +755,7 @@ namespace Xiropht_Solo_Miner
                     if (!configContent.Contains("mining_enable_automatic_thread_affinity") ||
                         !configContent.Contains("mining_manual_thread_affinity") ||
                         !configContent.Contains("mining_enable_cache") ||
-                        !configContent.Contains("mining_show_calculation_speed"))
+                        !configContent.Contains("mining_show_calculation_speed") || !configContent.Contains("mining_enable_pow_mining_way"))
                     {
                         ClassConsole.WriteLine(
                             "Config.json has been updated, a new option has been implemented.",
@@ -768,7 +773,7 @@ namespace Xiropht_Solo_Miner
                 if (!configContent.Contains("mining_enable_automatic_thread_affinity") ||
                     !configContent.Contains("mining_manual_thread_affinity") ||
                     !configContent.Contains("mining_enable_cache") ||
-                    !configContent.Contains("mining_show_calculation_speed"))
+                    !configContent.Contains("mining_show_calculation_speed") || !configContent.Contains("mining_enable_pow_mining_way"))
                 {
                     ClassConsole.WriteLine(
                         "Config.json has been updated, mining thread affinity, mining cache settings are implemented, close your solo miner and edit those settings if you want to enable them.",
@@ -1356,8 +1361,6 @@ namespace Xiropht_Solo_Miner
                                 var maxRange = decimal.Parse(splitCurrentBlockJob[1]);
 
 
-
-
                                 if (ClassMinerConfigObject.mining_enable_proxy)
                                 {
                                     ClassConsole.WriteLine(
@@ -1827,18 +1830,7 @@ namespace Xiropht_Solo_Miner
 
             while (CanMining)
             {
-
-
-                if (!rngGenerator)
-                {
-                    result =
-                        ClassUtility.GenerateNumberMathCalculation(minRange, maxRange);
-                }
-                else
-                {
-                    result =
-                        ClassUtility.GetRandomBetweenJob(minRange, maxRange);
-                }
+                result = !rngGenerator ? ClassUtility.GenerateNumberMathCalculation(minRange, maxRange) : ClassUtility.GetRandomBetweenJob(minRange, maxRange);
 
                 if (result < 0)
                 {
@@ -1865,7 +1857,7 @@ namespace Xiropht_Solo_Miner
         /// <param name="maxRange"></param>
         /// <param name="currentBlockDifficulty"></param>
         private static void MiningComputeProcess(int idThread, decimal minRange, decimal maxRange,
-            decimal currentBlockDifficulty)
+               decimal currentBlockDifficulty)
         {
             decimal firstNumber = GenerateRandomNumber(minRange, maxRange,
                 ClassUtility.GetRandomBetween(1, 100) >= ClassUtility.GetRandomBetweenSize(1, 100));
@@ -1982,9 +1974,9 @@ namespace Xiropht_Solo_Miner
                 mathCombinaison = secondNumber.ToString("F0") + ClassConnectorSetting.PacketContentSeperator + firstNumber.ToString("F0");
                 if (!DictionaryCacheMining.CheckMathCombinaison(mathCombinaison))
                 {
-                 
-                        DictionaryCacheMining.InsertMathCombinaison(mathCombinaison, idThread);
-                    
+
+                    DictionaryCacheMining.InsertMathCombinaison(mathCombinaison, idThread);
+
 
 
 
@@ -2002,7 +1994,7 @@ namespace Xiropht_Solo_Miner
                                 currentBlockDifficulty);
                             decimal calculCompute = testCalculationObject.Item2;
 
-                            
+
 
                             if (testCalculationObject.Item1)
                             {
@@ -2159,7 +2151,13 @@ namespace Xiropht_Solo_Miner
                                         }
                                     }).ConfigureAwait(false);
                                 }
-
+                                else
+                                {
+                                    if (ClassMinerConfigObject.mining_enable_pow_mining_way)
+                                    {
+                                        ClassAlgoMining.DoPowShare(hashShare, CurrentBlockIndication, idThread, currentBlockDifficulty, calculCompute, firstNumber, secondNumber, calcul);
+                                    }
+                                }
                             }
                         }
 
@@ -2236,6 +2234,13 @@ namespace Xiropht_Solo_Miner
                                         }
                                     }).ConfigureAwait(false);
                                 }
+                                else
+                                {
+                                    if (ClassMinerConfigObject.mining_enable_pow_mining_way)
+                                    {
+                                        ClassAlgoMining.DoPowShare(hashShare, CurrentBlockIndication, idThread, currentBlockDifficulty, calculCompute, secondNumber, firstNumber, calcul);
+                                    }
+                                }
                             }
                         }
 
@@ -2243,6 +2248,7 @@ namespace Xiropht_Solo_Miner
                 }
             }
         }
+
 
 
         /// <summary>
@@ -2331,6 +2337,7 @@ namespace Xiropht_Solo_Miner
 
             // Static AES Encryption -> Size and Key's from the current mining method.
             encryptedShare = ClassAlgoMining.EncryptAesShare(encryptedShare, idThread);
+
 
             // Generate SHA512 HASH for the share and return it.
             return ClassAlgoMining.GenerateSha512FromString(encryptedShare, idThread);

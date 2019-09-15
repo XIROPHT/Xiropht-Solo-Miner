@@ -1,11 +1,28 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Xiropht_Connector_All.Mining;
 
 namespace Xiropht_Solo_Miner.Algo
 {
+
+    public class ClassPowShareObject
+    {
+        public decimal PowDifficultyShare;
+
+        public string PowShareHash;
+
+        public string PowShareNonce;
+
+        public string PowShareCalculation;
+
+        public decimal PowShareResultCalculation;
+
+        public string PowEncryptedShare;
+    }
 
     public class ClassAlgoMining
     {
@@ -21,7 +38,15 @@ namespace Xiropht_Solo_Miner.Algo
 
         private static readonly char[] HexArrayList = "0123456789ABCDEF".ToCharArray();
 
+        public static int[] TotalNonceMining;
 
+
+        /// <summary>
+        /// Encrypt the math calculation generated for the Exact Share Mining System.
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="idThread"></param>
+        /// <returns></returns>
         public static string EncryptAesShare(string text, int idThread)
         {
             if (MemoryStreamMining[idThread] == null)
@@ -62,8 +87,7 @@ namespace Xiropht_Solo_Miner.Algo
 
 
             #region Cleanup work
-            CryptoStreamMining[idThread] = new CryptoStream(MemoryStreamMining[idThread],
-                CryptoTransformMining[idThread], CryptoStreamMode.Write);
+            CryptoStreamMining[idThread] = new CryptoStream(MemoryStreamMining[idThread], CryptoTransformMining[idThread], CryptoStreamMode.Write);
             MemoryStreamMining[idThread].SetLength(0);
             Array.Clear(resultByteShare, 0, resultByteShare.Length);
             Array.Clear(textBytes, 0, textBytes.Length);
@@ -73,6 +97,250 @@ namespace Xiropht_Solo_Miner.Algo
             return result;
         }
 
+
+        /// <summary>
+        /// Do PoW share from Exact Share Mining System.
+        /// </summary>
+        /// <param name="share"></param>
+        /// <param name="hashTarget"></param>
+        /// <param name="idThread"></param>
+        /// <param name="currentBlockDifficulty"></param>
+        /// <param name="result"></param>
+        /// <param name="firstNumber"></param>
+        /// <param name="secondNumber"></param>
+        /// <param name="calculation"></param>
+        public static ClassPowShareObject DoPowShare(string share, string hashTarget, int idThread,
+            decimal currentBlockDifficulty, decimal result, decimal firstNumber, decimal secondNumber,
+            string calculation)
+        {
+
+            if (TotalNonceMining[idThread] >= ClassPowSetting.MaxNonceValue)
+            {
+                TotalNonceMining[idThread] = 0;
+            }
+
+            #region Initialize PoW.
+
+            byte[] mergedShareArray = new byte[ClassPowSetting.MergedPowShareSize];
+
+            byte[] byteShareArray = Encoding.ASCII.GetBytes(share);
+
+            byte[] byteTargetShareArray = Encoding.ASCII.GetBytes(Program.CurrentBlockIndication);
+
+            byte[] nonceHashingArray = new byte[ClassPowSetting.NonceShareSize];
+
+            #endregion
+
+            #region Edit hash target with nonce.
+
+            byteTargetShareArray[ClassPowSetting.OffsetTargetShareNonceByteIndex1] =
+                (byte) TotalNonceMining[idThread];
+            byteTargetShareArray[ClassPowSetting.OffsetTargetShareNonceByteIndex2] =
+                (byte) (TotalNonceMining[idThread] >> ClassPowSetting.TargetShareNonceValueShift1);
+            byteTargetShareArray[ClassPowSetting.OffsetTargetShareNonceByteIndex3] =
+                (byte) (TotalNonceMining[idThread] >> ClassPowSetting.TargetShareNonceValueShift2);
+            byteTargetShareArray[ClassPowSetting.OffsetTargetShareNonceByteIndex4] =
+                (byte) (TotalNonceMining[idThread] >> ClassPowSetting.TargetShareNonceValueShift3);
+
+
+            #endregion
+
+            #region Merge share done with share target.
+
+            Array.Copy(byteShareArray, 0, mergedShareArray, ClassPowSetting.AmountByteShareIndex,
+                ClassPowSetting.AmountByteShareSize);
+            Array.Copy(byteTargetShareArray, 0, mergedShareArray, ClassPowSetting.AmountByteShareTargetIndex,
+                ClassPowSetting.AmountByteShareTargetSize);
+
+            #endregion
+
+            #region Encrypt and Compute merged share.
+
+
+            CryptoStreamMining[idThread].Write(mergedShareArray, 0, mergedShareArray.Length);
+
+
+            if (!CryptoStreamMining[idThread].HasFlushedFinalBlock)
+            {
+                CryptoStreamMining[idThread].FlushFinalBlock();
+                CryptoStreamMining[idThread].Flush();
+            }
+
+            mergedShareArray = MemoryStreamMining[idThread].ToArray();
+            MemoryStreamMining[idThread].SetLength(0);
+            CryptoStreamMining[idThread] = new CryptoStream(MemoryStreamMining[idThread], CryptoTransformMining[idThread], CryptoStreamMode.Write);
+
+
+            #endregion
+
+            #region Create nonce array from total nonce produced.
+
+            nonceHashingArray[ClassPowSetting.OffsetNonceByteIndex1] = (byte) TotalNonceMining[idThread];
+            nonceHashingArray[ClassPowSetting.OffsetNonceByteIndex2] = (byte) (TotalNonceMining[idThread] >> ClassPowSetting.NonceValueShift1);
+            nonceHashingArray[ClassPowSetting.OffsetNonceByteIndex3] = (byte) (TotalNonceMining[idThread] >> ClassPowSetting.NonceValueShift2);
+            nonceHashingArray[ClassPowSetting.OffsetNonceByteIndex4] = (byte) (TotalNonceMining[idThread] >> ClassPowSetting.NonceValueShift3);
+
+            #endregion
+
+            #region Generate Pow Share Hash and Nonce Share Hash
+
+            var powShareHash = ByteArrayToHexString(mergedShareArray).ToLower();
+
+            var nonceShareHash = ByteArrayToHexString(nonceHashingArray).ToLower();
+
+            #endregion
+
+
+            #region Calculate percentage of value of the PoW Share with the share target value.
+
+
+            decimal difficultyShareValue = 0;
+
+            // From result of the math calculation.
+            for (int i = ClassPowSetting.PowDifficultyShareFromResultStartIndex;
+                i < ClassPowSetting.PowDifficultyShareFromResultEndIndex;
+                i++)
+            {
+                if (i < ClassPowSetting.PowDifficultyShareFromResultEndIndex)
+                {
+                    decimal bytePowShareValue = powShareHash[i];
+                    decimal bytePowTargetShareValue = hashTarget[i];
+                    if (bytePowShareValue != 0 && bytePowTargetShareValue != 0)
+                    {
+                        if (bytePowShareValue == bytePowTargetShareValue)
+                        {
+                            difficultyShareValue += result;
+                        }
+                        else if (bytePowShareValue < bytePowTargetShareValue)
+                        {
+                            difficultyShareValue +=
+                                (result * ((bytePowShareValue / bytePowTargetShareValue) * 100)) / 100;
+                        }
+                        else if (bytePowShareValue > bytePowTargetShareValue)
+                        {
+                            difficultyShareValue -=
+                                (result * ((bytePowTargetShareValue / bytePowShareValue) * 100)) / 100;
+                        }
+                    }
+                }
+            }
+
+            // From the first number of the math calculation.
+            for (int i = ClassPowSetting.PowDifficultyShareFromFirstNumberStartIndex;
+                i < ClassPowSetting.PowDifficultyShareFromFirstNumberEndIndex;
+                i++)
+            {
+                if (i < ClassPowSetting.PowDifficultyShareFromFirstNumberEndIndex)
+                {
+                    decimal bytePowShareValue = powShareHash[i];
+                    decimal bytePowTargetShareValue = hashTarget[i];
+                    if (bytePowShareValue != 0 && bytePowTargetShareValue != 0)
+                    {
+                        if (bytePowShareValue == bytePowTargetShareValue)
+                        {
+                            difficultyShareValue += firstNumber;
+                        }
+                        else if (bytePowShareValue < bytePowTargetShareValue)
+                        {
+                            difficultyShareValue +=
+                                (firstNumber * ((bytePowShareValue / bytePowTargetShareValue) * 100)) / 100;
+                        }
+                        else if (bytePowShareValue > bytePowTargetShareValue)
+                        {
+                            difficultyShareValue -=
+                                (firstNumber * ((bytePowTargetShareValue / bytePowShareValue) * 100)) / 100;
+                        }
+                    }
+                }
+            }
+
+            // From the second number of the math calculation.
+            for (int i = ClassPowSetting.PowDifficultyShareFromSecondNumberStartIndex;
+                i < ClassPowSetting.PowDifficultyShareFromSecondtNumberEndIndex;
+                i++)
+            {
+                if (i < ClassPowSetting.PowDifficultyShareFromSecondtNumberEndIndex)
+                {
+                    decimal bytePowShareValue = powShareHash[i];
+                    decimal bytePowTargetShareValue = hashTarget[i];
+                    if (bytePowShareValue != 0 && bytePowTargetShareValue != 0)
+                    {
+                        if (bytePowShareValue == bytePowTargetShareValue)
+                        {
+                            difficultyShareValue += secondNumber;
+                        }
+                        else if (bytePowShareValue < bytePowTargetShareValue)
+                        {
+                            difficultyShareValue +=
+                                (secondNumber * ((bytePowShareValue / bytePowTargetShareValue) * 100)) / 100;
+                        }
+                        else if (bytePowShareValue > bytePowTargetShareValue)
+                        {
+                            difficultyShareValue -=
+                                (secondNumber * ((bytePowTargetShareValue / bytePowShareValue) * 100)) / 100;
+                        }
+                    }
+                }
+            }
+
+
+            difficultyShareValue = Math.Round(difficultyShareValue, 0);
+
+
+            #endregion
+
+            decimal maxBlockDifficulty =
+                (currentBlockDifficulty * ClassPowSetting.MaxPercentBlockPowValueTarget) / 100;
+            maxBlockDifficulty = Math.Round(maxBlockDifficulty, 0);
+
+            #region Test pow difficulty share value
+
+#if DEBUG
+            decimal difficultyTarget = 10000;
+
+
+            if (difficultyShareValue >= currentBlockDifficulty && difficultyShareValue <= maxBlockDifficulty)
+            {
+                Debug.WriteLine("Xiropht PoW hash test: " + powShareHash + " with difficulty value of: " +
+                                difficultyShareValue +
+                                " who target block difficulty value: " + currentBlockDifficulty + "/" +
+                                maxBlockDifficulty + " with Nonce: " + nonceShareHash +
+                                " found the block with the result: " + result.ToString("F0") +
+                                " calculation used: " + calculation);
+            }
+            else if (difficultyShareValue == difficultyTarget)
+            {
+                Debug.WriteLine("Xiropht PoW hash test: " + powShareHash + " with difficulty value of: " +
+                                difficultyShareValue + " with Nonce Hash: " + nonceShareHash +
+                                " found with the math result: " + result.ToString("F0") + " calculation used: " +
+                                calculation);
+            }
+#endif
+
+            #endregion
+
+            TotalNonceMining[idThread]++;
+
+            #region Cleanup work
+
+            Array.Clear(nonceHashingArray, 0, nonceHashingArray.Length);
+            Array.Clear(mergedShareArray, 0, mergedShareArray.Length);
+            Array.Clear(byteShareArray, 0, byteShareArray.Length);
+            Array.Clear(byteTargetShareArray, 0, byteTargetShareArray.Length);
+
+
+            #endregion
+
+            return new ClassPowShareObject()
+            {
+                PowDifficultyShare = difficultyShareValue,
+                PowShareHash = powShareHash,
+                PowShareNonce = nonceShareHash,
+                PowShareCalculation = calculation,
+                PowShareResultCalculation = result,
+                PowEncryptedShare = share
+            };
+        }
 
         /// <summary>
         /// Convert a byte array to hex string like Bitconverter class.
@@ -146,6 +414,12 @@ namespace Xiropht_Solo_Miner.Algo
 
         }
 
+
+        /// <summary>
+        /// Convert a byte array into a hex string
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
         public static string ByteArrayToHexString(byte[] bytes)
         {
             char[] hexChars = new char[(bytes.Length * 2)];
@@ -156,6 +430,19 @@ namespace Xiropht_Solo_Miner.Algo
                 hexChars[(j * 2) + 1] = HexArrayList[v & 15];
             }
             return new string(hexChars);
+        }
+
+        /// <summary>
+        /// Convert a hex string into a byte array
+        /// </summary>
+        /// <param name="hex"></param>
+        /// <returns></returns>
+        public static byte[] HexStringToByteArray(string hex)
+        {
+            return Enumerable.Range(0, hex.Length)
+                .Where(x => x % 2 == 0)
+                .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
+                .ToArray();
         }
     }
 }
