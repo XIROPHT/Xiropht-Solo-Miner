@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Xiropht_Connector_All.Mining;
 using Xiropht_Connector_All.RPC.Token;
 using Xiropht_Connector_All.Seed;
 using Xiropht_Connector_All.Setting;
@@ -1765,6 +1766,8 @@ namespace Xiropht_Solo_Miner
                 CurrentRoundXorKey, 1);
 
 
+            decimal maxPowDifficultyShare = (currentBlockDifficulty * ClassPowSetting.MaxPercentBlockPowValueTarget)/ 100;
+
             while (CanMining)
             {
                 if (!GetCancellationMiningTaskStatus())
@@ -1797,6 +1800,7 @@ namespace Xiropht_Solo_Miner
                         currentBlockId = CurrentBlockId;
                         currentBlockTimestamp = CurrentBlockTimestampCreate;
                         currentBlockDifficulty = decimal.Parse(CurrentBlockDifficulty);
+                        maxPowDifficultyShare = (currentBlockDifficulty * ClassPowSetting.MaxPercentBlockPowValueTarget) / 100;
                         if (ClassMinerConfigObject.mining_enable_cache)
                         {
                             ClearMiningCache();
@@ -1806,7 +1810,7 @@ namespace Xiropht_Solo_Miner
                     try
                     {
 
-                        MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty);
+                        MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty, maxPowDifficultyShare);
 
                     }
                     catch
@@ -1857,7 +1861,7 @@ namespace Xiropht_Solo_Miner
         /// <param name="maxRange"></param>
         /// <param name="currentBlockDifficulty"></param>
         private static void MiningComputeProcess(int idThread, decimal minRange, decimal maxRange,
-               decimal currentBlockDifficulty)
+               decimal currentBlockDifficulty, decimal maxPowDifficultyShare)
         {
             decimal firstNumber = GenerateRandomNumber(minRange, maxRange,
                 ClassUtility.GetRandomBetween(1, 100) >= ClassUtility.GetRandomBetweenSize(1, 100));
@@ -1960,7 +1964,30 @@ namespace Xiropht_Solo_Miner
                                             }
                                         }).ConfigureAwait(false);
                                     }
-
+                                    else
+                                    {
+                                        if (ClassMinerConfigObject.mining_enable_pow_mining_way)
+                                        {
+                                            var powShare = ClassAlgoMining.DoPowShare(hashShare, CurrentBlockIndication, idThread, currentBlockDifficulty, calculCompute, firstNumber, secondNumber, calcul);
+                                            if (powShare.PowDifficultyShare >= currentBlockDifficulty && powShare.PowDifficultyShare <= maxPowDifficultyShare)
+                                            {
+                                                Task.Factory.StartNew(async delegate
+                                                {
+                                                    string packetShare = ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceivePowJob + ClassConnectorSetting.PacketContentSeperator +
+                                                                     powShare.PowDifficultyShare.ToString("F0") + ClassConnectorSetting.PacketContentSeperator +
+                                                                     powShare.PowEncryptedShare + ClassConnectorSetting.PacketContentSeperator +
+                                                                     powShare.PowShareHash + ClassConnectorSetting.PacketContentSeperator +
+                                                                     powShare.PowShareNonce + ClassConnectorSetting.PacketContentSeperator +
+                                                                     powShare.PowShareCalculation + ClassConnectorSetting.PacketContentSeperator +
+                                                                     powShare.PowShareResultCalculation + ClassConnectorSetting.PacketContentSeperator + CurrentBlockId + ClassConnectorSetting.PacketContentSeperator + Assembly.GetExecutingAssembly().GetName().Version;
+                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(packetShare, string.Empty, false, false))
+                                                    {
+                                                        DisconnectNetwork();
+                                                    }
+                                                }).ConfigureAwait(false);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2062,6 +2089,30 @@ namespace Xiropht_Solo_Miner
                                             }
                                         }).ConfigureAwait(false);
                                     }
+                                    else
+                                    {
+                                        if (ClassMinerConfigObject.mining_enable_pow_mining_way)
+                                        {
+                                            var powShare = ClassAlgoMining.DoPowShare(hashShare, CurrentBlockIndication, idThread, currentBlockDifficulty, calculCompute, secondNumber, firstNumber, calcul);
+                                            if (powShare.PowDifficultyShare >= currentBlockDifficulty && powShare.PowDifficultyShare <= maxPowDifficultyShare)
+                                            {
+                                                Task.Factory.StartNew(async delegate
+                                                {
+                                                    string packetShare = ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceivePowJob + ClassConnectorSetting.PacketContentSeperator +
+                                                                     powShare.PowDifficultyShare.ToString("F0") + ClassConnectorSetting.PacketContentSeperator +
+                                                                     powShare.PowEncryptedShare + ClassConnectorSetting.PacketContentSeperator +
+                                                                     powShare.PowShareHash + ClassConnectorSetting.PacketContentSeperator +
+                                                                     powShare.PowShareNonce + ClassConnectorSetting.PacketContentSeperator +
+                                                                     powShare.PowShareCalculation + ClassConnectorSetting.PacketContentSeperator +
+                                                                     powShare.PowShareResultCalculation + ClassConnectorSetting.PacketContentSeperator + CurrentBlockId + ClassConnectorSetting.PacketContentSeperator + Assembly.GetExecutingAssembly().GetName().Version;
+                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(packetShare, string.Empty, false, false))
+                                                    {
+                                                        DisconnectNetwork();
+                                                    }
+                                                }).ConfigureAwait(false);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2155,7 +2206,24 @@ namespace Xiropht_Solo_Miner
                                 {
                                     if (ClassMinerConfigObject.mining_enable_pow_mining_way)
                                     {
-                                        ClassAlgoMining.DoPowShare(hashShare, CurrentBlockIndication, idThread, currentBlockDifficulty, calculCompute, firstNumber, secondNumber, calcul);
+                                        var powShare = ClassAlgoMining.DoPowShare(hashShare, CurrentBlockIndication, idThread, currentBlockDifficulty, calculCompute, firstNumber, secondNumber, calcul);
+                                        if (powShare.PowDifficultyShare >= currentBlockDifficulty && powShare.PowDifficultyShare <= maxPowDifficultyShare)
+                                        {
+                                            Task.Factory.StartNew(async delegate
+                                            {
+                                                string packetShare = ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceivePowJob + ClassConnectorSetting.PacketContentSeperator +
+                                                                 powShare.PowDifficultyShare.ToString("F0") + ClassConnectorSetting.PacketContentSeperator +
+                                                                 powShare.PowEncryptedShare + ClassConnectorSetting.PacketContentSeperator +
+                                                                 powShare.PowShareHash + ClassConnectorSetting.PacketContentSeperator +
+                                                                 powShare.PowShareNonce + ClassConnectorSetting.PacketContentSeperator +
+                                                                 powShare.PowShareCalculation + ClassConnectorSetting.PacketContentSeperator +
+                                                                 powShare.PowShareResultCalculation + ClassConnectorSetting.PacketContentSeperator + CurrentBlockId + ClassConnectorSetting.PacketContentSeperator + Assembly.GetExecutingAssembly().GetName().Version;
+                                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(packetShare, string.Empty, false, false))
+                                                {
+                                                    DisconnectNetwork();
+                                                }
+                                            }).ConfigureAwait(false);
+                                        }
                                     }
                                 }
                             }
@@ -2238,7 +2306,24 @@ namespace Xiropht_Solo_Miner
                                 {
                                     if (ClassMinerConfigObject.mining_enable_pow_mining_way)
                                     {
-                                        ClassAlgoMining.DoPowShare(hashShare, CurrentBlockIndication, idThread, currentBlockDifficulty, calculCompute, secondNumber, firstNumber, calcul);
+                                       var powShare = ClassAlgoMining.DoPowShare(hashShare, CurrentBlockIndication, idThread, currentBlockDifficulty, calculCompute, secondNumber, firstNumber, calcul);
+                                       if (powShare.PowDifficultyShare >= currentBlockDifficulty && powShare.PowDifficultyShare <= maxPowDifficultyShare)
+                                        {
+                                            Task.Factory.StartNew(async delegate
+                                            {
+                                                string packetShare = ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceivePowJob + ClassConnectorSetting.PacketContentSeperator +
+                                                                 powShare.PowDifficultyShare.ToString("F0") + ClassConnectorSetting.PacketContentSeperator +
+                                                                 powShare.PowEncryptedShare + ClassConnectorSetting.PacketContentSeperator +
+                                                                 powShare.PowShareHash + ClassConnectorSetting.PacketContentSeperator +
+                                                                 powShare.PowShareNonce + ClassConnectorSetting.PacketContentSeperator +
+                                                                 powShare.PowShareCalculation + ClassConnectorSetting.PacketContentSeperator +
+                                                                 powShare.PowShareResultCalculation + ClassConnectorSetting.PacketContentSeperator + CurrentBlockId + ClassConnectorSetting.PacketContentSeperator + Assembly.GetExecutingAssembly().GetName().Version;
+                                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(packetShare, string.Empty, false, false))
+                                                {
+                                                    DisconnectNetwork();
+                                                }
+                                            }).ConfigureAwait(false);
+                                        }
                                     }
                                 }
                             }
