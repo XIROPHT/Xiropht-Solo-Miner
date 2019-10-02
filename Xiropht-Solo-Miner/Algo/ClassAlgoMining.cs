@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Newtonsoft.Json.Linq;
 using Xiropht_Connector_All.Mining;
 
 namespace Xiropht_Solo_Miner.Algo
@@ -109,9 +111,8 @@ namespace Xiropht_Solo_Miner.Algo
         /// <param name="firstNumber"></param>
         /// <param name="secondNumber"></param>
         /// <param name="calculation"></param>
-        public static ClassPowShareObject DoPowShare(string share, string hashTarget, int idThread,
-            decimal currentBlockDifficulty, decimal result, decimal firstNumber, decimal secondNumber,
-            string calculation)
+        /// <param name="maxPowDifficultyShare"></param>
+        public static ClassPowShareObject DoPowShare(string share, string hashTarget, int idThread, decimal currentBlockDifficulty, decimal result, decimal firstNumber, decimal secondNumber, string calculation, decimal maxPowDifficultyShare)
         {
 
             if (TotalNonceMining[idThread] >= ClassPowSetting.MaxNonceValue)
@@ -289,22 +290,20 @@ namespace Xiropht_Solo_Miner.Algo
 
             #endregion
 
-            decimal maxBlockDifficulty =
-                (currentBlockDifficulty * ClassPowSetting.MaxPercentBlockPowValueTarget) / 100;
-            maxBlockDifficulty = Math.Round(maxBlockDifficulty, 0);
 
-            #region Test pow difficulty share value
 
 #if DEBUG
-            decimal difficultyTarget = 10000;
+            #region Test pow difficulty share value
+
+            decimal difficultyTarget = 1000000;
 
 
-            if (difficultyShareValue >= currentBlockDifficulty && difficultyShareValue <= maxBlockDifficulty)
+            if (difficultyShareValue >= currentBlockDifficulty && difficultyShareValue <= maxPowDifficultyShare)
             {
                 Debug.WriteLine("Xiropht PoW hash test: " + powShareHash + " with difficulty value of: " +
                                 difficultyShareValue +
                                 " who target block difficulty value: " + currentBlockDifficulty + "/" +
-                                maxBlockDifficulty + " with Nonce: " + nonceShareHash +
+                                maxPowDifficultyShare + " with Nonce: " + nonceShareHash +
                                 " found the block with the result: " + result.ToString("F0") +
                                 " calculation used: " + calculation);
             }
@@ -315,9 +314,10 @@ namespace Xiropht_Solo_Miner.Algo
                                 " found with the math result: " + result.ToString("F0") + " calculation used: " +
                                 calculation);
             }
+            #endregion
+
 #endif
 
-            #endregion
 
             TotalNonceMining[idThread]++;
 
@@ -386,14 +386,14 @@ namespace Xiropht_Solo_Miner.Algo
         /// <returns></returns>
         public static string EncryptXorShare(string text, string key)
         {
-            var result = new StringBuilder();
+            char[] resultXor = new char[text.Length];
 
             for (int c = 0; c < text.Length; c++)
-                result.Append((char) ((uint) text[c] ^ (uint) key[c % key.Length]));
-            return result.ToString();
+            {
+                resultXor[c] = ((char)((uint)text[c] ^ (uint)key[c % key.Length]));
+            }
+            return new string(resultXor, 0, resultXor.Length);
         }
-
-
 
         /// <summary>
         /// Generate a sha512 hash
@@ -432,17 +432,5 @@ namespace Xiropht_Solo_Miner.Algo
             return new string(hexChars);
         }
 
-        /// <summary>
-        /// Convert a hex string into a byte array
-        /// </summary>
-        /// <param name="hex"></param>
-        /// <returns></returns>
-        public static byte[] HexStringToByteArray(string hex)
-        {
-            return Enumerable.Range(0, hex.Length)
-                .Where(x => x % 2 == 0)
-                .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
-                .ToArray();
-        }
     }
 }
