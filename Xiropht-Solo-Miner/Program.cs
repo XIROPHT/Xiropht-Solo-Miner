@@ -35,7 +35,7 @@ namespace Xiropht_Solo_Miner
 
         private const int TotalConfigLine = 9;
         private const string OldConfigFile = "\\config.ini";
-        private static string ConfigFile = "\\config.json";
+        private static string _configFile = "\\config.json";
         private const string WalletCacheFile = "\\wallet-cache.xiro";
 
         /// <summary>
@@ -199,7 +199,7 @@ namespace Xiropht_Solo_Miner
             }
             else
             {
-                if (File.Exists(ConvertPath(ConfigFile)))
+                if (File.Exists(ConvertPath(_configFile)))
                 {
                     if (LoadConfig(false))
                     {
@@ -281,6 +281,7 @@ namespace Xiropht_Solo_Miner
         /// <param name="args"></param>
         private static void HandleArgumentStartup(string[] args)
         {
+            bool enableCustomConfigPath = false;
             if (args.Length > 0)
             {
                 foreach (var argument in args)
@@ -295,14 +296,19 @@ namespace Xiropht_Solo_Miner
                                 case ClassStartupArgumentEnumeration.ConfigFileArgument:
                                     if (splitArgument.Length > 1)
                                     {
-                                        ConfigFile = ConvertPath(splitArgument[1]);
+                                        _configFile = ConvertPath(splitArgument[1]);
                                         ClassConsole.WriteLine("Enable using of custom config.json file from path: "+ ConvertPath(splitArgument[1]), 4);
+                                        enableCustomConfigPath = true;
                                     }
                                     break;
                             }
                         }
                     }
                 }
+            }
+            if (!enableCustomConfigPath)
+            {
+                _configFile = GetCurrentPathConfig(_configFile);
             }
         }
 
@@ -732,7 +738,7 @@ namespace Xiropht_Solo_Miner
             }
             else
             {
-                using (StreamReader reader = new StreamReader(ConvertPath(ConfigFile)))
+                using (StreamReader reader = new StreamReader(ConvertPath(_configFile)))
                 {
                     string line;
                     while ((line = reader.ReadLine()) != null)
@@ -851,9 +857,9 @@ namespace Xiropht_Solo_Miner
         /// </summary>
         private static void WriteMinerConfig()
         {
-            ClassConsole.WriteLine("Save: " + ConvertPath(ConfigFile), 1);
-            File.Create(ConvertPath(ConfigFile)).Close();
-            using (StreamWriter writeConfig = new StreamWriter(ConvertPath(ConfigFile))
+            ClassConsole.WriteLine("Save: " + ConvertPath(_configFile), 1);
+            File.Create(ConvertPath(_configFile)).Close();
+            using (StreamWriter writeConfig = new StreamWriter(ConvertPath(_configFile))
             {
                 AutoFlush = true
             })
