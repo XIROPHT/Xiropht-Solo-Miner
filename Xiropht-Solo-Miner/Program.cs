@@ -19,6 +19,7 @@ using Xiropht_Solo_Miner.Setting;
 using Xiropht_Solo_Miner.Token;
 using Xiropht_Solo_Miner.Utility;
 using ClassAlgoMining = Xiropht_Solo_Miner.Algo.ClassAlgoMining;
+// ReSharper disable FunctionNeverReturns
 
 namespace Xiropht_Solo_Miner
 {
@@ -177,7 +178,7 @@ namespace Xiropht_Solo_Miner
                         }
                     }
 
-                    ClassConsole.WriteLine("Connecting to the network..", 2);
+                    ClassConsole.WriteLine("Connecting to the network..", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
                     Task.Factory.StartNew(StartConnectMinerAsync).ConfigureAwait(false);
                 }
                 else
@@ -186,13 +187,21 @@ namespace Xiropht_Solo_Miner
                         "config file invalid, do you want to follow instructions to setting again your config file ? [Y/N]",
                         2);
                     string choose = Console.ReadLine();
-                    if (choose.ToLower() == "y")
+                    if (choose != null)
                     {
-                        FirstSettingConfig();
+                        if (choose.ToLower() == "y")
+                        {
+                            FirstSettingConfig();
+                        }
+                        else
+                        {
+                            ClassConsole.WriteLine("Close solo miner program.");
+                            Process.GetCurrentProcess().Kill();
+                        }
                     }
                     else
                     {
-                        ClassConsole.WriteLine("Close solo miner program.", 0);
+                        ClassConsole.WriteLine("Close solo miner program.");
                         Process.GetCurrentProcess().Kill();
                     }
                 }
@@ -222,7 +231,7 @@ namespace Xiropht_Solo_Miner
                             }
                         }
 
-                        ClassConsole.WriteLine("Connecting to the network..", 2);
+                        ClassConsole.WriteLine("Connecting to the network..", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
                         Task.Factory.StartNew(StartConnectMinerAsync).ConfigureAwait(false);
                     }
                     else
@@ -231,13 +240,21 @@ namespace Xiropht_Solo_Miner
                             "config file invalid, do you want to follow instructions to setting again your config file ? [Y/N]",
                             2);
                         string choose = Console.ReadLine();
-                        if (choose.ToLower() == "y")
+                        if (choose != null)
                         {
-                            FirstSettingConfig();
+                            if (choose.ToLower() == "y")
+                            {
+                                FirstSettingConfig();
+                            }
+                            else
+                            {
+                                ClassConsole.WriteLine("Close solo miner program.");
+                                Process.GetCurrentProcess().Kill();
+                            }
                         }
                         else
                         {
-                            ClassConsole.WriteLine("Close solo miner program.", 0);
+                            ClassConsole.WriteLine("Close solo miner program.");
                             Process.GetCurrentProcess().Kill();
                         }
                     }
@@ -248,9 +265,9 @@ namespace Xiropht_Solo_Miner
                 }
             }
 
-            ClassConsole.WriteLine("Command Line: h -> show hashrate.", 4);
-            ClassConsole.WriteLine("Command Line: d -> show current difficulty.", 4);
-            ClassConsole.WriteLine("Command Line: r -> show current range", 4);
+            ClassConsole.WriteLine("Command Line: h -> show hashrate.", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
+            ClassConsole.WriteLine("Command Line: d -> show current difficulty.", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
+            ClassConsole.WriteLine("Command Line: r -> show current range", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
 
             Console.CancelKeyPress += Console_CancelKeyPress;
 
@@ -268,7 +285,7 @@ namespace Xiropht_Solo_Miner
                     }
                     catch
                     {
-
+                        // Ignored.
                     }
                 }
             });
@@ -323,7 +340,7 @@ namespace Xiropht_Solo_Miner
             }
             else
             {
-                ClassConsole.WriteLine("Loading wallet address cache..", 2);
+                ClassConsole.WriteLine("Loading wallet address cache..", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
                 using (var reader =
                     new StreamReader(ConvertPath(AppDomain.CurrentDomain.BaseDirectory + WalletCacheFile)))
                 {
@@ -341,7 +358,7 @@ namespace Xiropht_Solo_Miner
                     }
                 }
 
-                ClassConsole.WriteLine("Loading wallet address cache successfully loaded.", 1);
+                ClassConsole.WriteLine("Loading wallet address cache successfully loaded.", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
             }
         }
 
@@ -351,7 +368,7 @@ namespace Xiropht_Solo_Miner
         /// <param name="walletAddress"></param>
         public static void SaveWalletAddressCache(string walletAddress)
         {
-            ClassConsole.WriteLine("Save wallet address cache..", 2);
+            ClassConsole.WriteLine("Save wallet address cache..", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
             if (!File.Exists(ConvertPath(AppDomain.CurrentDomain.BaseDirectory + WalletCacheFile)))
             {
                 File.Create(ConvertPath(AppDomain.CurrentDomain.BaseDirectory + WalletCacheFile)).Close();
@@ -362,7 +379,7 @@ namespace Xiropht_Solo_Miner
                 writer.WriteLine(walletAddress);
             }
 
-            ClassConsole.WriteLine("Save wallet address cache successfully done.", 2);
+            ClassConsole.WriteLine("Save wallet address cache successfully done.", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
 
         }
 
@@ -373,9 +390,12 @@ namespace Xiropht_Solo_Miner
         private static void FirstSettingConfig()
         {
             ClassMinerConfigObject = new ClassMinerConfig();
-            ClassConsole.WriteLine("Do you want to use a proxy instead seed node? [Y/N]", 2);
+            ClassConsole.WriteLine("Do you want to use a proxy instead seed node? [Y/N]", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
             var choose = Console.ReadLine();
-
+            if (choose == null)
+            {
+                choose = "n";
+            }
             if (choose.ToLower() == "y")
             {
                 Console.WriteLine("Please, write your wallet address or a worker name to start your solo mining: ");
@@ -392,6 +412,10 @@ namespace Xiropht_Solo_Miner
 
                 Console.WriteLine("Do you want select a mining range percentage of difficulty? [Y/N]");
                 choose = Console.ReadLine();
+                if (choose == null)
+                {
+                    choose = "n";
+                }
                 if (choose.ToLower() == "y")
                 {
                     Console.WriteLine("Select the start percentage range of difficulty [0 to 100]:");
@@ -462,9 +486,8 @@ namespace Xiropht_Solo_Miner
                 ClassMinerConfigObject.mining_wallet_address =
                     ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
 
-                ClassConsole.WriteLine("Checking wallet address..", 4);
-                bool checkWalletAddress = ClassTokenNetwork
-                    .CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
+                ClassConsole.WriteLine("Checking wallet address..", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
+                bool checkWalletAddress = ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
 
                 while (ClassMinerConfigObject.mining_wallet_address.Length <
                        ClassConnectorSetting.MinWalletAddressSize ||
@@ -474,18 +497,12 @@ namespace Xiropht_Solo_Miner
                     Console.WriteLine(
                         "Invalid wallet address - Please, write your wallet address to start your solo mining: ");
                     ClassMinerConfigObject.mining_wallet_address = Console.ReadLine();
-                    ClassMinerConfigObject.mining_wallet_address =
-                        ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
-                    ClassConsole.WriteLine("Checking wallet address..", 4);
-                    checkWalletAddress = ClassTokenNetwork
-                        .CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
+                    ClassMinerConfigObject.mining_wallet_address = ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
+                    ClassConsole.WriteLine("Checking wallet address..", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
+                    checkWalletAddress = ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
                 }
 
-                if (checkWalletAddress)
-                {
-                    ClassConsole.WriteLine(
-                        "Wallet address: " + ClassMinerConfigObject.mining_wallet_address + " is valid.", 1);
-                }
+                ClassConsole.WriteLine("Wallet address: " + ClassMinerConfigObject.mining_wallet_address + " is valid.", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
             }
 
             Console.WriteLine("How many threads do you want to run? Number of cores detected: " +
@@ -508,6 +525,10 @@ namespace Xiropht_Solo_Miner
 
             Console.WriteLine("Do you want share job range per thread ? [Y/N]");
             choose = Console.ReadLine();
+            if (choose == null)
+            {
+                choose = "n";
+            }
             if (choose.ToLower() == "y")
             {
                 ClassMinerConfigObject.mining_thread_spread_job = true;
@@ -539,7 +560,7 @@ namespace Xiropht_Solo_Miner
                 InitializeMiningCache();
             }
 
-            ClassConsole.WriteLine("Start to connect to the network..", 2);
+            ClassConsole.WriteLine("Start to connect to the network..", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
             Task.Factory.StartNew(StartConnectMinerAsync).ConfigureAwait(false);
         }
 
@@ -557,7 +578,7 @@ namespace Xiropht_Solo_Miner
 
                 using (StreamReader reader = new StreamReader(GetCurrentPathConfig(OldConfigFile)))
                 {
-                    string line = string.Empty;
+                    string line;
                     while ((line = reader.ReadLine()) != null)
                     {
                         configContent += line + "\n";
@@ -603,7 +624,7 @@ namespace Xiropht_Solo_Miner
                             {
                                 ClassMinerConfigObject.mining_wallet_address =
                                     ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
-                                ClassConsole.WriteLine("Checking wallet address before to connect..", 4);
+                                ClassConsole.WriteLine("Checking wallet address before to connect..", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
 
                                 bool checkWalletAddress = ClassTokenNetwork
                                     .CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
@@ -619,19 +640,14 @@ namespace Xiropht_Solo_Miner
                                     ClassMinerConfigObject.mining_wallet_address =
                                         ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject
                                             .mining_wallet_address);
-                                    ClassConsole.WriteLine("Checking wallet address before to connect..", 4);
+                                    ClassConsole.WriteLine("Checking wallet address before to connect..", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
                                     walletAddressCorrected = true;
                                     checkWalletAddress = ClassTokenNetwork
                                         .CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address)
                                         .Result;
                                 }
 
-                                if (checkWalletAddress)
-                                {
-                                    ClassConsole.WriteLine(
-                                        "Wallet address: " + ClassMinerConfigObject.mining_wallet_address +
-                                        " is valid.", 1);
-                                }
+                                ClassConsole.WriteLine("Wallet address: " + ClassMinerConfigObject.mining_wallet_address + " is valid.", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
                             }
 
                             totalConfigLine++;
@@ -643,7 +659,7 @@ namespace Xiropht_Solo_Miner
                             if (!int.TryParse(configLine.Replace("MINING_THREAD=", ""),
                                 out ClassMinerConfigObject.mining_thread))
                             {
-                                ClassConsole.WriteLine("MINING_THREAD line contain an invalid integer value.", 3);
+                                ClassConsole.WriteLine("MINING_THREAD line contain an invalid integer value.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                                 return false;
                             }
 
@@ -678,7 +694,7 @@ namespace Xiropht_Solo_Miner
                             if (!int.TryParse(configLine.Replace("PROXY_PORT=", ""),
                                 out ClassMinerConfigObject.mining_proxy_port))
                             {
-                                ClassConsole.WriteLine("PROXY_PORT= line contain an invalid integer value.", 3);
+                                ClassConsole.WriteLine("PROXY_PORT= line contain an invalid integer value.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                                 return false;
                             }
 
@@ -697,7 +713,7 @@ namespace Xiropht_Solo_Miner
                                 out ClassMinerConfigObject.mining_percent_difficulty_start))
                             {
                                 ClassConsole.WriteLine(
-                                    "MINING_PERCENT_DIFFICULTY_START= line contain an invalid integer value.", 3);
+                                    "MINING_PERCENT_DIFFICULTY_START= line contain an invalid integer value.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                                 return false;
                             }
 
@@ -710,7 +726,7 @@ namespace Xiropht_Solo_Miner
                                 out ClassMinerConfigObject.mining_percent_difficulty_end))
                             {
                                 ClassConsole.WriteLine(
-                                    "MINING_PERCENT_DIFFICULTY_END= line contain an invalid integer value.", 3);
+                                    "MINING_PERCENT_DIFFICULTY_END= line contain an invalid integer value.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                                 return false;
                             }
 
@@ -753,7 +769,7 @@ namespace Xiropht_Solo_Miner
                 {
                     ClassMinerConfigObject.mining_wallet_address =
                         ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
-                    ClassConsole.WriteLine("Checking wallet address before to connect..", 4);
+                    ClassConsole.WriteLine("Checking wallet address before to connect..", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
                     bool walletAddressCorrected = false;
                     bool checkWalletAddress = ClassTokenNetwork
                         .CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
@@ -767,17 +783,13 @@ namespace Xiropht_Solo_Miner
                         ClassMinerConfigObject.mining_wallet_address = Console.ReadLine();
                         ClassMinerConfigObject.mining_wallet_address =
                             ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
-                        ClassConsole.WriteLine("Checking wallet address before to connect..", 4);
+                        ClassConsole.WriteLine("Checking wallet address before to connect..", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
                         walletAddressCorrected = true;
                         checkWalletAddress = ClassTokenNetwork
                             .CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
                     }
 
-                    if (checkWalletAddress)
-                    {
-                        ClassConsole.WriteLine(
-                            "Wallet address: " + ClassMinerConfigObject.mining_wallet_address + " is valid.", 1);
-                    }
+                    ClassConsole.WriteLine("Wallet address: " + ClassMinerConfigObject.mining_wallet_address + " is valid.", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
 
                     if (walletAddressCorrected)
                     {
@@ -829,9 +841,7 @@ namespace Xiropht_Solo_Miner
         /// </summary>
         private static void InitializeMiningCache()
         {
-            ClassConsole.WriteLine(
-                "Be carefull, the mining cache feature is in beta and can use a lot of RAM, this function is not tested at 100% and need more features for probably provide more luck on mining.",
-                3);
+            ClassConsole.WriteLine("Be carefull, the mining cache feature is in beta and can use a lot of RAM, this function is not tested at 100% and need more features for probably provide more luck on mining.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
 
             if (DictionaryCacheMining == null)
             {
@@ -886,10 +896,9 @@ namespace Xiropht_Solo_Miner
 
             if (!ClassMinerConfigObject.mining_enable_proxy)
             {
-                while (!await _objectSeedNodeNetwork.StartConnectToSeedAsync(string.Empty,
-                    ClassConnectorSetting.SeedNodePort))
+                while (!await _objectSeedNodeNetwork.StartConnectToSeedAsync(string.Empty))
                 {
-                    ClassConsole.WriteLine("Can't connect to the network, retry in 5 seconds..", 3);
+                    ClassConsole.WriteLine("Can't connect to the network, retry in 5 seconds..", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                     await Task.Delay(ClassConnectorSetting.MaxTimeoutConnect);
                 }
             }
@@ -898,20 +907,19 @@ namespace Xiropht_Solo_Miner
                 while (!await _objectSeedNodeNetwork.StartConnectToSeedAsync(ClassMinerConfigObject.mining_proxy_host,
                     ClassMinerConfigObject.mining_proxy_port))
                 {
-                    ClassConsole.WriteLine("Can't connect to the proxy, retry in 5 seconds..", 3);
+                    ClassConsole.WriteLine("Can't connect to the proxy, retry in 5 seconds..", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                     await Task.Delay(ClassConnectorSetting.MaxTimeoutConnect);
                 }
             }
 
             if (!ClassMinerConfigObject.mining_enable_proxy)
             {
-                ClassConsole.WriteLine("Miner connected to the network, generate certificate connection..", 2);
+                ClassConsole.WriteLine("Miner connected to the network, generate certificate connection..", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
             }
 
             if (!ClassMinerConfigObject.mining_enable_proxy)
             {
-                if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(_certificateConnection, string.Empty, false,
-                    false))
+                if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(_certificateConnection, string.Empty))
                 {
                     IsConnected = false;
                     return false;
@@ -922,7 +930,7 @@ namespace Xiropht_Solo_Miner
             if (!ClassMinerConfigObject.mining_enable_proxy)
             {
 
-                ClassConsole.WriteLine("Send wallet address for login your solo miner..", 2);
+                ClassConsole.WriteLine("Send wallet address for login your solo miner..", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
                 if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
                     ClassConnectorSettingEnumeration.MinerLoginType + ClassConnectorSetting.PacketContentSeperator +
                     ClassMinerConfigObject.mining_wallet_address + ClassConnectorSetting.PacketSplitSeperator,
@@ -934,7 +942,7 @@ namespace Xiropht_Solo_Miner
             }
             else
             {
-                ClassConsole.WriteLine("Send wallet address for login your solo miner..", 2);
+                ClassConsole.WriteLine("Send wallet address for login your solo miner..", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
                 if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
                     ClassConnectorSettingEnumeration.MinerLoginType + ClassConnectorSetting.PacketContentSeperator +
                     ClassMinerConfigObject.mining_wallet_address + ClassConnectorSetting.PacketContentSeperator +
@@ -942,7 +950,7 @@ namespace Xiropht_Solo_Miner
                     ClassConnectorSetting.PacketContentSeperator +
                     ClassMinerConfigObject.mining_percent_difficulty_start +
                     ClassConnectorSetting.PacketContentSeperator +
-                    Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
+                    Assembly.GetExecutingAssembly().GetName().Version, string.Empty))
                 {
                     IsConnected = false;
                     return false;
@@ -965,9 +973,9 @@ namespace Xiropht_Solo_Miner
         /// </summary>
         private static void CheckNetwork()
         {
-            Task.Factory.StartNew(async delegate()
+            Task.Factory.StartNew(async delegate
             {
-                ClassConsole.WriteLine("Check connection enabled.", 2);
+                ClassConsole.WriteLine("Check connection enabled.", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
                 await Task.Delay(ThreadCheckNetworkInterval);
                 while (true)
                 {
@@ -976,28 +984,28 @@ namespace Xiropht_Solo_Miner
                         if (!IsConnected || !_loginAccepted || !_objectSeedNodeNetwork.ReturnStatus() ||
                             LastPacketReceived + TimeoutPacketReceived < DateTimeOffset.Now.ToUnixTimeSeconds())
                         {
-                            ClassConsole.WriteLine("Miner connection lost or aborted, retry to connect..", 3);
+                            ClassConsole.WriteLine("Miner connection lost or aborted, retry to connect..", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                             StopMining();
                             CurrentBlockId = "";
                             CurrentBlockHash = "";
                             DisconnectNetwork();
                             while (!await StartConnectMinerAsync())
                             {
-                                ClassConsole.WriteLine("Can't connect to the proxy, retry in 5 seconds..", 3);
+                                ClassConsole.WriteLine("Can't connect to the proxy, retry in 5 seconds..", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                                 await Task.Delay(ClassConnectorSetting.MaxTimeoutConnect);
                             }
                         }
                     }
                     catch
                     {
-                        ClassConsole.WriteLine("Miner connection lost or aborted, retry to connect..", 3);
+                        ClassConsole.WriteLine("Miner connection lost or aborted, retry to connect..", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                         StopMining();
                         CurrentBlockId = "";
                         CurrentBlockHash = "";
                         DisconnectNetwork();
                         while (!await StartConnectMinerAsync())
                         {
-                            ClassConsole.WriteLine("Can't connect to the proxy, retry in 5 seconds..", 3);
+                            ClassConsole.WriteLine("Can't connect to the proxy, retry in 5 seconds..", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                             await Task.Delay(ClassConnectorSetting.MaxTimeoutConnect);
                         }
                     }
@@ -1027,7 +1035,7 @@ namespace Xiropht_Solo_Miner
             }
             catch
             {
-
+                // Ignored.
             }
 
             try
@@ -1036,6 +1044,7 @@ namespace Xiropht_Solo_Miner
             }
             catch
             {
+                // Ignored.
             }
 
             StopMining();
@@ -1048,114 +1057,113 @@ namespace Xiropht_Solo_Miner
         {
             try
             {
-                Task.Factory.StartNew(async delegate()
+                Task.Factory.StartNew(async delegate
+                {
+                    while (true)
                     {
-                        while (true)
+                        try
                         {
-                            try
-                            {
-                                _cancellationTaskNetwork.Token.ThrowIfCancellationRequested();
+                            _cancellationTaskNetwork.Token.ThrowIfCancellationRequested();
 
-                                if (!ClassMinerConfigObject.mining_enable_proxy)
+                            if (!ClassMinerConfigObject.mining_enable_proxy)
+                            {
+                                string packet =
+                                    await _objectSeedNodeNetwork.ReceivePacketFromSeedNodeAsync(
+                                        _certificateConnection,
+                                        false,
+                                        true);
+                                if (packet == ClassSeedNodeStatus.SeedError)
                                 {
-                                    string packet =
-                                        await _objectSeedNodeNetwork.ReceivePacketFromSeedNodeAsync(
-                                            _certificateConnection,
-                                            false,
-                                            true);
-                                    if (packet == ClassSeedNodeStatus.SeedError)
+                                    ClassConsole.WriteLine("Network error received. Waiting network checker..", ClassConsoleColorEnumeration.ConsoleTextColorRed);
+                                    DisconnectNetwork();
+                                    break;
+                                }
+
+                                if (packet.Contains(ClassConnectorSetting.PacketSplitSeperator))
+                                {
+                                    if (_malformedPacket != null)
                                     {
-                                        ClassConsole.WriteLine("Network error received. Waiting network checker..", 3);
-                                        DisconnectNetwork();
-                                        break;
+                                        if (!string.IsNullOrEmpty(_malformedPacket))
+                                        {
+                                            packet = _malformedPacket + packet;
+                                            _malformedPacket = string.Empty;
+                                        }
                                     }
 
-                                    if (packet.Contains(ClassConnectorSetting.PacketSplitSeperator))
+                                    var splitPacket = packet.Split(
+                                        new[] { ClassConnectorSetting.PacketSplitSeperator },
+                                        StringSplitOptions.None);
+                                    foreach (var packetEach in splitPacket)
                                     {
-                                        if (_malformedPacket != null)
+                                        if (!string.IsNullOrEmpty(packetEach))
                                         {
-                                            if (!string.IsNullOrEmpty(_malformedPacket))
+                                            if (packetEach.Length > 1)
                                             {
-                                                packet = _malformedPacket + packet;
-                                                _malformedPacket = string.Empty;
-                                            }
-                                        }
-
-                                        var splitPacket = packet.Split(
-                                            new[] {ClassConnectorSetting.PacketSplitSeperator},
-                                            StringSplitOptions.None);
-                                        foreach (var packetEach in splitPacket)
-                                        {
-                                            if (!string.IsNullOrEmpty(packetEach))
-                                            {
-                                                if (packetEach.Length > 1)
+                                                var packetRequest =
+                                                    packetEach.Replace(ClassConnectorSetting.PacketSplitSeperator,
+                                                        "");
+                                                if (packetRequest == ClassSeedNodeStatus.SeedError)
                                                 {
-                                                    var packetRequest =
-                                                        packetEach.Replace(ClassConnectorSetting.PacketSplitSeperator,
-                                                            "");
-                                                    if (packetRequest == ClassSeedNodeStatus.SeedError)
-                                                    {
-                                                        ClassConsole.WriteLine(
-                                                            "Network error received. Waiting network checker..", 3);
-                                                        DisconnectNetwork();
-                                                        break;
-                                                    }
+                                                    ClassConsole.WriteLine(
+                                                        "Network error received. Waiting network checker..", ClassConsoleColorEnumeration.ConsoleTextColorRed);
+                                                    DisconnectNetwork();
+                                                    break;
+                                                }
 
-                                                    if (packetRequest != ClassSeedNodeStatus.SeedNone &&
-                                                        packetRequest != ClassSeedNodeStatus.SeedError)
-                                                    {
-                                                        await HandlePacketMiningAsync(packetRequest);
-                                                    }
+                                                if (packetRequest != ClassSeedNodeStatus.SeedNone &&
+                                                    packetRequest != ClassSeedNodeStatus.SeedError)
+                                                {
+                                                    await HandlePacketMiningAsync(packetRequest);
                                                 }
                                             }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (_malformedPacket != null && (_malformedPacket.Length < int.MaxValue - 1 ||
-                                                                        (long) (_malformedPacket.Length +
-                                                                                packet.Length) <
-                                                                        int.MaxValue - 1))
-                                        {
-                                            _malformedPacket += packet;
-                                        }
-                                        else
-                                        {
-                                            _malformedPacket = string.Empty;
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    string packet =
-                                        await _objectSeedNodeNetwork.ReceivePacketFromSeedNodeAsync(string.Empty, false,
-                                            false);
-                                    if (packet == ClassSeedNodeStatus.SeedError)
+                                    if (_malformedPacket != null && (_malformedPacket.Length < int.MaxValue - 1 ||
+                                                                    (long)(_malformedPacket.Length +
+                                                                            packet.Length) <
+                                                                    int.MaxValue - 1))
                                     {
-                                        ClassConsole.WriteLine("Network error received. Waiting network checker..", 3);
-                                        DisconnectNetwork();
-                                        break;
+                                        _malformedPacket += packet;
                                     }
-
-                                    if (packet != ClassSeedNodeStatus.SeedNone)
+                                    else
                                     {
-                                        await HandlePacketMiningAsync(packet);
+                                        _malformedPacket = string.Empty;
                                     }
                                 }
                             }
-                            catch (Exception error)
+                            else
                             {
-                                Console.WriteLine("Listen Network error exception: " + error.Message);
-                                DisconnectNetwork();
-                                break;
+                                string packet =
+                                    await _objectSeedNodeNetwork.ReceivePacketFromSeedNodeAsync(string.Empty, false,
+                                        false);
+                                if (packet == ClassSeedNodeStatus.SeedError)
+                                {
+                                    ClassConsole.WriteLine("Network error received. Waiting network checker..", ClassConsoleColorEnumeration.ConsoleTextColorRed);
+                                    DisconnectNetwork();
+                                    break;
+                                }
+
+                                if (packet != ClassSeedNodeStatus.SeedNone)
+                                {
+                                    await HandlePacketMiningAsync(packet);
+                                }
                             }
                         }
-                    }, _cancellationTaskNetwork.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current)
-                    .ConfigureAwait(false);
+                        catch (Exception error)
+                        {
+                            Console.WriteLine("Listen Network error exception: " + error.Message);
+                            DisconnectNetwork();
+                            break;
+                        }
+                    }
+                }, _cancellationTaskNetwork.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current).ConfigureAwait(false);
             }
             catch
             {
-
+                // Catch the exception once the task is cancelled.
             }
         }
 
@@ -1174,7 +1182,7 @@ namespace Xiropht_Solo_Miner
                 {
                     case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.SendLoginAccepted:
                         CalculateHashrate();
-                        ClassConsole.WriteLine("Miner login accepted, start to mine..", 1);
+                        ClassConsole.WriteLine("Miner login accepted, start to mine..", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
                         _loginAccepted = true;
                         MiningProcessingRequest();
                         break;
@@ -1184,148 +1192,146 @@ namespace Xiropht_Solo_Miner
                         try
                         {
                             await Task.Factory.StartNew(async delegate
+                            {
+                                if (methodList.Contains("#"))
+                                {
+                                    var splitMethodList =
+                                        methodList.Split(new[] { "#" }, StringSplitOptions.None);
+                                    if (ListeMiningMethodName.Count > 1)
                                     {
-                                        if (methodList.Contains("#"))
+                                        foreach (var methodName in splitMethodList)
                                         {
-                                            var splitMethodList =
-                                                methodList.Split(new[] {"#"}, StringSplitOptions.None);
-                                            if (ListeMiningMethodName.Count > 1)
+                                            if (!string.IsNullOrEmpty(methodName))
                                             {
-                                                foreach (var methodName in splitMethodList)
+                                                if (ListeMiningMethodName.Contains(methodName) == false)
                                                 {
-                                                    if (!string.IsNullOrEmpty(methodName))
+                                                    ListeMiningMethodName.Add(methodName);
+                                                }
+
+                                                if (!ClassMinerConfigObject.mining_enable_proxy)
+                                                {
+                                                    if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                        ClassSoloMiningPacketEnumeration
+                                                            .SoloMiningSendPacketEnumeration
+                                                            .ReceiveAskContentBlockMethod +
+                                                        ClassConnectorSetting.PacketContentSeperator +
+                                                        methodName + ClassConnectorSetting
+                                                            .PacketMiningSplitSeperator,
+                                                        _certificateConnection, false, true))
                                                     {
-                                                        if (ListeMiningMethodName.Contains(methodName) == false)
-                                                        {
-                                                            ListeMiningMethodName.Add(methodName);
-                                                        }
-
-                                                        if (!ClassMinerConfigObject.mining_enable_proxy)
-                                                        {
-                                                            if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                                ClassSoloMiningPacketEnumeration
-                                                                    .SoloMiningSendPacketEnumeration
-                                                                    .ReceiveAskContentBlockMethod +
-                                                                ClassConnectorSetting.PacketContentSeperator +
-                                                                methodName + ClassConnectorSetting
-                                                                    .PacketMiningSplitSeperator,
-                                                                _certificateConnection, false, true))
-                                                            {
-                                                                DisconnectNetwork();
-                                                                break;
-                                                            }
-                                                        }
-                                                        else
-                                                        {
-                                                            if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                                ClassSoloMiningPacketEnumeration
-                                                                    .SoloMiningSendPacketEnumeration
-                                                                    .ReceiveAskContentBlockMethod +
-                                                                ClassConnectorSetting.PacketContentSeperator +
-                                                                methodName,
-                                                                string.Empty,
-                                                                false, false))
-                                                            {
-                                                                DisconnectNetwork();
-                                                                break;
-                                                            }
-                                                        }
-
-                                                        _cancellationTaskNetwork.Token.ThrowIfCancellationRequested();
-                                                        await Task.Delay(1000);
+                                                        DisconnectNetwork();
+                                                        break;
                                                     }
                                                 }
-                                            }
-                                            else
-                                            {
-                                                foreach (var methodName in splitMethodList)
+                                                else
                                                 {
-                                                    if (!string.IsNullOrEmpty(methodName))
+                                                    if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                        ClassSoloMiningPacketEnumeration
+                                                            .SoloMiningSendPacketEnumeration
+                                                            .ReceiveAskContentBlockMethod +
+                                                        ClassConnectorSetting.PacketContentSeperator +
+                                                        methodName,
+                                                        string.Empty,
+                                                        false, false))
                                                     {
-                                                        if (ListeMiningMethodName.Contains(methodName) == false)
-                                                        {
-                                                            ListeMiningMethodName.Add(methodName);
-                                                        }
-
-                                                        if (!ClassMinerConfigObject.mining_enable_proxy)
-                                                        {
-                                                            if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                                ClassSoloMiningPacketEnumeration
-                                                                    .SoloMiningSendPacketEnumeration
-                                                                    .ReceiveAskContentBlockMethod +
-                                                                ClassConnectorSetting.PacketContentSeperator +
-                                                                methodName + ClassConnectorSetting
-                                                                    .PacketMiningSplitSeperator,
-                                                                _certificateConnection, false, true))
-                                                            {
-                                                                DisconnectNetwork();
-                                                                break;
-                                                            }
-                                                        }
-                                                        else
-                                                        {
-                                                            if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                                ClassSoloMiningPacketEnumeration
-                                                                    .SoloMiningSendPacketEnumeration
-                                                                    .ReceiveAskContentBlockMethod +
-                                                                ClassConnectorSetting.PacketContentSeperator +
-                                                                methodName,
-                                                                string.Empty,
-                                                                false, false))
-                                                            {
-                                                                DisconnectNetwork();
-                                                                break;
-                                                            }
-                                                        }
-
-                                                        _cancellationTaskNetwork.Token.ThrowIfCancellationRequested();
-                                                        await Task.Delay(1000);
+                                                        DisconnectNetwork();
+                                                        break;
                                                     }
                                                 }
+
+                                                _cancellationTaskNetwork.Token.ThrowIfCancellationRequested();
+                                                await Task.Delay(1000);
                                             }
                                         }
-                                        else
+                                    }
+                                    else
+                                    {
+                                        foreach (var methodName in splitMethodList)
                                         {
-                                            if (ListeMiningMethodName.Contains(methodList) == false)
+                                            if (!string.IsNullOrEmpty(methodName))
                                             {
-                                                ListeMiningMethodName.Add(methodList);
-                                            }
+                                                if (ListeMiningMethodName.Contains(methodName) == false)
+                                                {
+                                                    ListeMiningMethodName.Add(methodName);
+                                                }
 
-                                            if (!ClassMinerConfigObject.mining_enable_proxy)
-                                            {
-                                                if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                    ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
-                                                        .ReceiveAskContentBlockMethod +
-                                                    ClassConnectorSetting.PacketContentSeperator + methodList +
-                                                    ClassConnectorSetting.PacketMiningSplitSeperator,
-                                                    _certificateConnection, false,
-                                                    true))
+                                                if (!ClassMinerConfigObject.mining_enable_proxy)
                                                 {
-                                                    DisconnectNetwork();
+                                                    if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                        ClassSoloMiningPacketEnumeration
+                                                            .SoloMiningSendPacketEnumeration
+                                                            .ReceiveAskContentBlockMethod +
+                                                        ClassConnectorSetting.PacketContentSeperator +
+                                                        methodName + ClassConnectorSetting
+                                                            .PacketMiningSplitSeperator,
+                                                        _certificateConnection, false, true))
+                                                    {
+                                                        DisconnectNetwork();
+                                                        break;
+                                                    }
                                                 }
-                                            }
-                                            else
-                                            {
-                                                if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                    ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
-                                                        .ReceiveAskContentBlockMethod +
-                                                    ClassConnectorSetting.PacketContentSeperator + methodList,
-                                                    string.Empty,
-                                                    false,
-                                                    false))
+                                                else
                                                 {
-                                                    DisconnectNetwork();
+                                                    if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                        ClassSoloMiningPacketEnumeration
+                                                            .SoloMiningSendPacketEnumeration
+                                                            .ReceiveAskContentBlockMethod +
+                                                        ClassConnectorSetting.PacketContentSeperator +
+                                                        methodName,
+                                                        string.Empty,
+                                                        false, false))
+                                                    {
+                                                        DisconnectNetwork();
+                                                        break;
+                                                    }
                                                 }
+
+                                                _cancellationTaskNetwork.Token.ThrowIfCancellationRequested();
+                                                await Task.Delay(1000);
                                             }
                                         }
+                                    }
+                                }
+                                else
+                                {
+                                    if (ListeMiningMethodName.Contains(methodList) == false)
+                                    {
+                                        ListeMiningMethodName.Add(methodList);
+                                    }
 
-                                    }, _cancellationTaskNetwork.Token, TaskCreationOptions.LongRunning,
-                                    TaskScheduler.Current)
-                                .ConfigureAwait(false);
+                                    if (!ClassMinerConfigObject.mining_enable_proxy)
+                                    {
+                                        if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                            ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
+                                                .ReceiveAskContentBlockMethod +
+                                            ClassConnectorSetting.PacketContentSeperator + methodList +
+                                            ClassConnectorSetting.PacketMiningSplitSeperator,
+                                            _certificateConnection, false,
+                                            true))
+                                        {
+                                            DisconnectNetwork();
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                            ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
+                                                .ReceiveAskContentBlockMethod +
+                                            ClassConnectorSetting.PacketContentSeperator + methodList,
+                                            string.Empty,
+                                            false,
+                                            false))
+                                        {
+                                            DisconnectNetwork();
+                                        }
+                                    }
+                                }
+
+                            }, _cancellationTaskNetwork.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current).ConfigureAwait(false);
                         }
                         catch
                         {
-
+                            // Catch the exception once the task is cancelled.
                         }
 
                         break;
@@ -1342,7 +1348,6 @@ namespace Xiropht_Solo_Miner
                         break;
                     case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.SendCurrentBlockMining:
 
-                        bool proxy = false;
                         var splitBlockContent = splitPacket[1].Split(new[] {"&"}, StringSplitOptions.None);
 
                         if (CurrentBlockId != splitBlockContent[0].Replace("ID=", "") ||
@@ -1362,7 +1367,7 @@ namespace Xiropht_Solo_Miner
                                 if (CurrentBlockId == splitBlockContent[0].Replace("ID=", ""))
                                 {
                                     ClassConsole.WriteLine(
-                                        "Current Block ID: " + CurrentBlockId + " has been renewed.", 3);
+                                        "Current Block ID: " + CurrentBlockId + " has been renewed.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                                 }
 
                                 CurrentBlockId = splitBlockContent[0].Replace("ID=", "");
@@ -1397,7 +1402,7 @@ namespace Xiropht_Solo_Miner
                                 {
                                     ClassConsole.WriteLine(
                                         "Job range received from proxy: " + minRange +
-                                        ClassConnectorSetting.PacketContentSeperator + maxRange + "", 2);
+                                        ClassConnectorSetting.PacketContentSeperator + maxRange + "", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
                                 }
 
 
@@ -1431,18 +1436,14 @@ namespace Xiropht_Solo_Miner
                                     if (i < ClassMinerConfigObject.mining_thread)
                                     {
                                         int iThread = i;
-                                        _threadMining[i] = new Task(() => InitializeMiningThread(iThread),
-                                            _cancellationTaskMining.Token);
+                                        _threadMining[i] = new Task(() => InitializeMiningThread(iThread), _cancellationTaskMining.Token);
                                         _threadMining[i].Start();
                                     }
                                 }
                             }
                             catch (Exception error)
                             {
-                                ClassConsole.WriteLine(
-                                    "Block template not completly received, stop mining and ask again the blocktemplate | Exception: " +
-                                    error.Message,
-                                    2);
+                                ClassConsole.WriteLine("Block template not completly received, stop mining and ask again the blocktemplate | Exception: " + error.Message, 2);
                                 StopMining();
                             }
                         }
@@ -1453,34 +1454,34 @@ namespace Xiropht_Solo_Miner
                         {
                             case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.ShareUnlock:
                                 TotalBlockAccepted++;
-                                ClassConsole.WriteLine("Block accepted, stop mining, wait new block.", 1);
+                                ClassConsole.WriteLine("Block accepted, stop mining, wait new block.", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
                                 break;
                             case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.ShareWrong:
                                 TotalBlockRefused++;
-                                ClassConsole.WriteLine("Block not accepted, stop mining, wait new block.", 3);
+                                ClassConsole.WriteLine("Block not accepted, stop mining, wait new block.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                                 break;
                             case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.ShareAleady:
                                 if (CurrentBlockId == splitPacket[1])
                                 {
                                     ClassConsole.WriteLine(
                                         splitPacket[1] +
-                                        " Orphaned, someone already got it, stop mining, wait new block.", 3);
+                                        " Orphaned, someone already got it, stop mining, wait new block.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                                 }
                                 else
                                 {
-                                    ClassConsole.WriteLine(splitPacket[1] + " Orphaned, someone already get it.", 3);
+                                    ClassConsole.WriteLine(splitPacket[1] + " Orphaned, someone already get it.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                                 }
 
                                 break;
                             case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.ShareNotExist:
-                                ClassConsole.WriteLine("Block mined does not exist, stop mining, wait new block.", 4);
+                                ClassConsole.WriteLine("Block mined does not exist, stop mining, wait new block.", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
                                 break;
                             case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.ShareGood:
                                 TotalShareAccepted++;
                                 break;
                             case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.ShareBad:
                                 ClassConsole.WriteLine(
-                                    "Block not accepted, someone already got it or your share is invalid.", 3);
+                                    "Block not accepted, someone already got it or your share is invalid.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                                 TotalShareInvalid++;
                                 break;
                         }
@@ -1490,6 +1491,7 @@ namespace Xiropht_Solo_Miner
             }
             catch
             {
+                // Ignored.
             }
         }
 
@@ -1500,74 +1502,73 @@ namespace Xiropht_Solo_Miner
         {
             try
             {
-                Task.Factory.StartNew(async delegate()
+                Task.Factory.StartNew(async delegate
+                {
+                    if (!ClassMinerConfigObject.mining_enable_proxy)
                     {
-                        if (!ClassMinerConfigObject.mining_enable_proxy)
+                        while (IsConnected)
                         {
-                            while (IsConnected)
-                            {
-                                _cancellationTaskNetwork.Token.ThrowIfCancellationRequested();
+                            _cancellationTaskNetwork.Token.ThrowIfCancellationRequested();
 
+                            if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
+                                    .ReceiveAskListBlockMethod + ClassConnectorSetting.PacketMiningSplitSeperator,
+                                _certificateConnection, false, true))
+                            {
+                                DisconnectNetwork();
+                                break;
+                            }
+
+                            await Task.Delay(1000);
+                            if (ListeMiningMethodContent.Count > 0)
+                            {
                                 if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
                                     ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
-                                        .ReceiveAskListBlockMethod + ClassConnectorSetting.PacketMiningSplitSeperator,
-                                    _certificateConnection, false, true))
+                                        .ReceiveAskCurrentBlockMining +
+                                    ClassConnectorSetting.PacketMiningSplitSeperator, _certificateConnection, false,
+                                    true))
                                 {
                                     DisconnectNetwork();
                                     break;
                                 }
-
-                                await Task.Delay(1000);
-                                if (ListeMiningMethodContent.Count > 0)
-                                {
-                                    if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                        ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
-                                            .ReceiveAskCurrentBlockMining +
-                                        ClassConnectorSetting.PacketMiningSplitSeperator, _certificateConnection, false,
-                                        true))
-                                    {
-                                        DisconnectNetwork();
-                                        break;
-                                    }
-                                }
-
-                                await Task.Delay(100);
                             }
+
+                            await Task.Delay(100);
                         }
-                        else
+                    }
+                    else
+                    {
+                        while (IsConnected)
                         {
-                            while (IsConnected)
+                            _cancellationTaskNetwork.Token.ThrowIfCancellationRequested();
+                            if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
+                                    .ReceiveAskListBlockMethod,
+                                string.Empty, false, false))
                             {
-                                _cancellationTaskNetwork.Token.ThrowIfCancellationRequested();
+                                DisconnectNetwork();
+                            }
+
+                            await Task.Delay(1000);
+
+                            if (ListeMiningMethodContent.Count > 0)
+                            {
                                 if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
                                     ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
-                                        .ReceiveAskListBlockMethod,
-                                    string.Empty, false, false))
+                                        .ReceiveAskCurrentBlockMining, string.Empty, false, false))
                                 {
                                     DisconnectNetwork();
                                 }
-
-                                await Task.Delay(1000);
-
-                                if (ListeMiningMethodContent.Count > 0)
-                                {
-                                    if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                        ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
-                                            .ReceiveAskCurrentBlockMining, string.Empty, false, false))
-                                    {
-                                        DisconnectNetwork();
-                                    }
-                                }
-
-                                await Task.Delay(100);
                             }
+
+                            await Task.Delay(100);
                         }
-                    }, _cancellationTaskNetwork.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current)
-                    .ConfigureAwait(false);
+                    }
+                }, _cancellationTaskNetwork.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current).ConfigureAwait(false);
             }
             catch
             {
-
+                // Catch the exception once the task is cancelled.
             }
         }
 
@@ -1583,11 +1584,8 @@ namespace Xiropht_Solo_Miner
                 try
                 {
 
-                    ClassConsole.WriteLine(
-                        "Clear mining cache | total calculation cached: " +
-                        DictionaryCacheMining.Count.ToString("F0"), 5);
+                    ClassConsole.WriteLine("Clear mining cache | total calculation cached: " + DictionaryCacheMining.Count.ToString("F0"), 5);
                     DictionaryCacheMining.CleanMiningCache();
-
                     error = false;
                 }
                 catch
@@ -1641,6 +1639,7 @@ namespace Xiropht_Solo_Miner
             }
             catch
             {
+                // Ignored.
             }
 
             _cancellationTaskMining = new CancellationTokenSource();
@@ -1657,8 +1656,8 @@ namespace Xiropht_Solo_Miner
             }
             catch
             {
+                // Ignored.
             }
-
         }
 
         /// <summary>
@@ -1739,20 +1738,20 @@ namespace Xiropht_Solo_Miner
                     {
                         decimal minRangeTmp = minRange;
                         decimal maxRangeTmp = minRangeTmp + incrementProxyRange;
-                        StartMiningAsync(iThread, Math.Round(minRangeTmp, 0), (Math.Round(maxRangeTmp, 0)));
+                        StartMiningAsync(iThread, Math.Round(minRangeTmp), (Math.Round(maxRangeTmp)));
                     }
                     else
                     {
                         decimal minRangeTmp = Math.Round((maxRange / ClassMinerConfigObject.mining_thread) * (i1 - 1),
                             0);
-                        decimal maxRangeTmp = (Math.Round(((maxRange / ClassMinerConfigObject.mining_thread) * i1), 0));
+                        decimal maxRangeTmp = (Math.Round(((maxRange / ClassMinerConfigObject.mining_thread) * i1)));
                         StartMiningAsync(iThread, minRangeTmp, maxRangeTmp);
                     }
                 }
                 else
                 {
-                    decimal minRangeTmp = Math.Round((maxRange / ClassMinerConfigObject.mining_thread) * (i1 - 1), 0);
-                    decimal maxRangeTmp = (Math.Round(((maxRange / ClassMinerConfigObject.mining_thread) * i1), 0));
+                    decimal minRangeTmp = Math.Round((maxRange / ClassMinerConfigObject.mining_thread) * (i1 - 1));
+                    decimal maxRangeTmp = (Math.Round(((maxRange / ClassMinerConfigObject.mining_thread) * i1)));
                     StartMiningAsync(iThread, minRangeTmp, maxRangeTmp);
                 }
             }
@@ -1777,7 +1776,7 @@ namespace Xiropht_Solo_Miner
 
             while (ListeMiningMethodName.Count == 0)
             {
-                ClassConsole.WriteLine("No method content received, waiting to receive them before..", 2);
+                ClassConsole.WriteLine("No method content received, waiting to receive them before..", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
                 Thread.Sleep(1000);
             }
 
@@ -1846,6 +1845,7 @@ namespace Xiropht_Solo_Miner
                     }
                     catch
                     {
+                        // Ignored.
                     }
                 }
             }
@@ -1872,7 +1872,7 @@ namespace Xiropht_Solo_Miner
                     result *= -1;
                 }
 
-                result = Math.Round(result, 0);
+                result = Math.Round(result);
 
                 if (result >= 2 && result <= maxRange)
                 {
@@ -1891,8 +1891,8 @@ namespace Xiropht_Solo_Miner
         /// <param name="minRange"></param>
         /// <param name="maxRange"></param>
         /// <param name="currentBlockDifficulty"></param>
-        private static void MiningComputeProcess(int idThread, decimal minRange, decimal maxRange,
-               decimal currentBlockDifficulty, decimal maxPowDifficultyShare)
+        /// <param name="maxPowDifficultyShare"></param>
+        private static void MiningComputeProcess(int idThread, decimal minRange, decimal maxRange, decimal currentBlockDifficulty, decimal maxPowDifficultyShare)
         {
             decimal firstNumber = GenerateRandomNumber(minRange, maxRange,
                 ClassUtility.GetRandomBetween(1, 100) >= ClassUtility.GetRandomBetweenSize(1, 100));
@@ -1952,11 +1952,11 @@ namespace Xiropht_Solo_Miner
                                         {
                                             ClassConsole.WriteLine(
                                                 "Exact share for unlock the block seems to be found, submit it: " +
-                                                calcul1 + " and waiting confirmation..\n", 1);
+                                                calcul1 + " and waiting confirmation..\n", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
 #if DEBUG
                                             Debug.WriteLine(
                                                 "Exact share for unlock the block seems to be found, submit it: " +
-                                                calcul1 + " and waiting confirmation..\n", 1);
+                                                calcul1 + " and waiting confirmation..\n", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
 #endif
                                             if (!ClassMinerConfigObject.mining_enable_proxy)
                                             {
@@ -2000,13 +2000,38 @@ namespace Xiropht_Solo_Miner
                                         if (ClassMinerConfigObject.mining_enable_pow_mining_way)
                                         {
                                             var powShare = ClassAlgoMining.DoPowShare(hashShare, CurrentBlockIndication, idThread, currentBlockDifficulty, calculCompute, firstNumber, secondNumber, calcul, maxPowDifficultyShare);
+#if DEBUG
+                                            #region Test pow difficulty share value
+
+                                            decimal difficultyTarget = 10000000;
+
+
+                                            if (powShare.PowDifficultyShare >= currentBlockDifficulty && powShare.PowDifficultyShare <= maxPowDifficultyShare)
+                                            {
+                                                Debug.WriteLine("Xiropht PoW hash test: " + powShare.PowShareHash + " with difficulty value of: " +
+                                                                powShare.PowDifficultyShare +
+                                                                " who target block difficulty value: " + currentBlockDifficulty + "/" +
+                                                                maxPowDifficultyShare + " with Nonce: " + powShare.PowShareNonce +
+                                                                " found the block with the result: " + powShare.PowShareResultCalculation.ToString("F0") +
+                                                                " calculation used: " + powShare.PowShareCalculation);
+                                            }
+                                            else if (powShare.PowDifficultyShare == difficultyTarget)
+                                            {
+                                                Debug.WriteLine("Xiropht PoW hash test: " + powShare.PowShareHash + " with difficulty value of: " +
+                                                                powShare.PowDifficultyShare + " with Nonce Hash: " + powShare.PowShareNonce +
+                                                                " found with the math result: " + powShare.PowShareResultCalculation.ToString("F0") + " calculation used: " +
+                                                                powShare.PowShareCalculation);
+                                            }
+                                            #endregion
+
+#endif
                                             if (powShare.PowDifficultyShare >= currentBlockDifficulty && powShare.PowDifficultyShare <= maxPowDifficultyShare)
                                             {
                                                 Task.Factory.StartNew(async delegate
                                                 {
                                                     ClassConsole.WriteLine(
                                                         "PoW share for unlock the block seems to be found, submit it hash: " +
-                                                        powShare.PowShareHash + " | Nonce: "+powShare.PowShareNonce+" and waiting confirmation..\n", 1);
+                                                        powShare.PowShareHash + " | Nonce: "+powShare.PowShareNonce+" and waiting confirmation..\n", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
 
                                                     string packetShare = ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceivePowJob + ClassConnectorSetting.PacketContentSeperator +
                                                                      powShare.PowDifficultyShare.ToString("F0") + ClassConnectorSetting.PacketContentSeperator +
@@ -2078,11 +2103,11 @@ namespace Xiropht_Solo_Miner
                                         {
                                             ClassConsole.WriteLine(
                                                 "Exact share for unlock the block seems to be found, submit it: " +
-                                                calcul1 + " and waiting confirmation..\n", 1);
+                                                calcul1 + " and waiting confirmation..\n", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
 #if DEBUG
                                             Debug.WriteLine(
                                                 "Exact share for unlock the block seems to be found, submit it: " +
-                                                calcul1 + " and waiting confirmation..\n", 1);
+                                                calcul1 + " and waiting confirmation..\n", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
 #endif
                                             if (!ClassMinerConfigObject.mining_enable_proxy)
                                             {
@@ -2126,13 +2151,38 @@ namespace Xiropht_Solo_Miner
                                         if (ClassMinerConfigObject.mining_enable_pow_mining_way)
                                         {
                                             var powShare = ClassAlgoMining.DoPowShare(hashShare, CurrentBlockIndication, idThread, currentBlockDifficulty, calculCompute, secondNumber, firstNumber, calcul, maxPowDifficultyShare);
+#if DEBUG
+                                            #region Test pow difficulty share value
+
+                                            decimal difficultyTarget = 10000000;
+
+
+                                            if (powShare.PowDifficultyShare >= currentBlockDifficulty && powShare.PowDifficultyShare <= maxPowDifficultyShare)
+                                            {
+                                                Debug.WriteLine("Xiropht PoW hash test: " + powShare.PowShareHash + " with difficulty value of: " +
+                                                                powShare.PowDifficultyShare +
+                                                                " who target block difficulty value: " + currentBlockDifficulty + "/" +
+                                                                maxPowDifficultyShare + " with Nonce: " + powShare.PowShareNonce +
+                                                                " found the block with the result: " + powShare.PowShareResultCalculation.ToString("F0") +
+                                                                " calculation used: " + powShare.PowShareCalculation);
+                                            }
+                                            else if (powShare.PowDifficultyShare == difficultyTarget)
+                                            {
+                                                Debug.WriteLine("Xiropht PoW hash test: " + powShare.PowShareHash + " with difficulty value of: " +
+                                                                powShare.PowDifficultyShare + " with Nonce Hash: " + powShare.PowShareNonce +
+                                                                " found with the math result: " + powShare.PowShareResultCalculation.ToString("F0") + " calculation used: " +
+                                                                powShare.PowShareCalculation);
+                                            }
+                                            #endregion
+
+#endif
                                             if (powShare.PowDifficultyShare >= currentBlockDifficulty && powShare.PowDifficultyShare <= maxPowDifficultyShare)
                                             {
                                                 Task.Factory.StartNew(async delegate
                                                 {
                                                     ClassConsole.WriteLine(
                                                         "PoW share for unlock the block seems to be found, submit it hash: " +
-                                                        powShare.PowShareHash + " | Nonce: " + powShare.PowShareNonce + " and waiting confirmation..\n", 1);
+                                                        powShare.PowShareHash + " | Nonce: " + powShare.PowShareNonce + " and waiting confirmation..\n", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
                                                     string packetShare = ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceivePowJob + ClassConnectorSetting.PacketContentSeperator +
                                                                      powShare.PowDifficultyShare.ToString("F0") + ClassConnectorSetting.PacketContentSeperator +
                                                                      powShare.PowEncryptedShare + ClassConnectorSetting.PacketContentSeperator +
@@ -2194,11 +2244,11 @@ namespace Xiropht_Solo_Miner
                                     {
                                         ClassConsole.WriteLine(
                                             "Exact share for unlock the block seems to be found, submit it: " +
-                                            calcul1 + " and waiting confirmation..\n", 1);
+                                            calcul1 + " and waiting confirmation..\n", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
 #if DEBUG
                                             Debug.WriteLine(
                                                 "Exact share for unlock the block seems to be found, submit it: " +
-                                                calcul1 + " and waiting confirmation..\n", 1);
+                                                calcul1 + " and waiting confirmation..\n", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
 #endif
                                         if (!ClassMinerConfigObject.mining_enable_proxy)
                                         {
@@ -2229,8 +2279,7 @@ namespace Xiropht_Solo_Miner
                                                 ClassConnectorSetting.PacketContentSeperator + hashShare +
                                                 ClassConnectorSetting.PacketContentSeperator + CurrentBlockId +
                                                 ClassConnectorSetting.PacketContentSeperator +
-                                                Assembly.GetExecutingAssembly().GetName().Version, string.Empty,
-                                                false, false))
+                                                Assembly.GetExecutingAssembly().GetName().Version, string.Empty))
                                             {
                                                 DisconnectNetwork();
                                             }
@@ -2242,13 +2291,38 @@ namespace Xiropht_Solo_Miner
                                     if (ClassMinerConfigObject.mining_enable_pow_mining_way)
                                     {
                                         var powShare = ClassAlgoMining.DoPowShare(hashShare, CurrentBlockIndication, idThread, currentBlockDifficulty, calculCompute, firstNumber, secondNumber, calcul, maxPowDifficultyShare);
+#if DEBUG
+                                        #region Test pow difficulty share value
+
+                                        decimal difficultyTarget = 10000000;
+
+
+                                        if (powShare.PowDifficultyShare >= currentBlockDifficulty && powShare.PowDifficultyShare <= maxPowDifficultyShare)
+                                        {
+                                            Debug.WriteLine("Xiropht PoW hash test: " + powShare.PowShareHash + " with difficulty value of: " +
+                                                            powShare.PowDifficultyShare +
+                                                            " who target block difficulty value: " + currentBlockDifficulty + "/" +
+                                                            maxPowDifficultyShare + " with Nonce: " + powShare.PowShareNonce +
+                                                            " found the block with the result: " + powShare.PowShareResultCalculation.ToString("F0") +
+                                                            " calculation used: " + powShare.PowShareCalculation);
+                                        }
+                                        else if (powShare.PowDifficultyShare == difficultyTarget)
+                                        {
+                                            Debug.WriteLine("Xiropht PoW hash test: " + powShare.PowShareHash + " with difficulty value of: " +
+                                                            powShare.PowDifficultyShare + " with Nonce Hash: " + powShare.PowShareNonce +
+                                                            " found with the math result: " + powShare.PowShareResultCalculation.ToString("F0") + " calculation used: " +
+                                                            powShare.PowShareCalculation);
+                                        }
+                                        #endregion
+
+#endif
                                         if (powShare.PowDifficultyShare >= currentBlockDifficulty && powShare.PowDifficultyShare <= maxPowDifficultyShare)
                                         {
                                             Task.Factory.StartNew(async delegate
                                             {
                                                 ClassConsole.WriteLine(
                                                     "PoW share for unlock the block seems to be found, submit it hash: " +
-                                                    powShare.PowShareHash + " | Nonce: " + powShare.PowShareNonce + " and waiting confirmation..\n", 1);
+                                                    powShare.PowShareHash + " | Nonce: " + powShare.PowShareNonce + " and waiting confirmation..\n", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
                                                 string packetShare = ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceivePowJob + ClassConnectorSetting.PacketContentSeperator +
                                                                  powShare.PowDifficultyShare.ToString("F0") + ClassConnectorSetting.PacketContentSeperator +
                                                                  powShare.PowEncryptedShare + ClassConnectorSetting.PacketContentSeperator +
@@ -2256,7 +2330,7 @@ namespace Xiropht_Solo_Miner
                                                                  powShare.PowShareNonce + ClassConnectorSetting.PacketContentSeperator +
                                                                  powShare.PowShareCalculation + ClassConnectorSetting.PacketContentSeperator +
                                                                  powShare.PowShareResultCalculation + ClassConnectorSetting.PacketContentSeperator + CurrentBlockId + ClassConnectorSetting.PacketContentSeperator + Assembly.GetExecutingAssembly().GetName().Version;
-                                                if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(packetShare, string.Empty, false, false))
+                                                if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(packetShare, string.Empty))
                                                 {
                                                     DisconnectNetwork();
                                                 }
@@ -2297,11 +2371,11 @@ namespace Xiropht_Solo_Miner
                                     {
                                         ClassConsole.WriteLine(
                                             "Exact share for unlock the block seems to be found, submit it: " +
-                                            calcul1 + " and waiting confirmation..\n", 1);
+                                            calcul1 + " and waiting confirmation..\n", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
 #if DEBUG
                                             Debug.WriteLine(
                                                 "Exact share for unlock the block seems to be found, submit it: " +
-                                                calcul1 + " and waiting confirmation..\n", 1);
+                                                calcul1 + " and waiting confirmation..\n", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
 #endif
                                         if (!ClassMinerConfigObject.mining_enable_proxy)
                                         {
@@ -2332,8 +2406,7 @@ namespace Xiropht_Solo_Miner
                                                 ClassConnectorSetting.PacketContentSeperator + hashShare +
                                                 ClassConnectorSetting.PacketContentSeperator + CurrentBlockId +
                                                 ClassConnectorSetting.PacketContentSeperator +
-                                                Assembly.GetExecutingAssembly().GetName().Version, string.Empty,
-                                                false, false))
+                                                Assembly.GetExecutingAssembly().GetName().Version, string.Empty))
                                             {
                                                 DisconnectNetwork();
                                             }
@@ -2345,13 +2418,38 @@ namespace Xiropht_Solo_Miner
                                     if (ClassMinerConfigObject.mining_enable_pow_mining_way)
                                     {
                                        var powShare = ClassAlgoMining.DoPowShare(hashShare, CurrentBlockIndication, idThread, currentBlockDifficulty, calculCompute, secondNumber, firstNumber, calcul, maxPowDifficultyShare);
-                                       if (powShare.PowDifficultyShare >= currentBlockDifficulty && powShare.PowDifficultyShare <= maxPowDifficultyShare)
+#if DEBUG
+                                        #region Test pow difficulty share value
+
+                                        decimal difficultyTarget = 10000000;
+
+
+                                        if (powShare.PowDifficultyShare >= currentBlockDifficulty && powShare.PowDifficultyShare <= maxPowDifficultyShare)
+                                        {
+                                            Debug.WriteLine("Xiropht PoW hash test: " + powShare.PowShareHash + " with difficulty value of: " +
+                                                            powShare.PowDifficultyShare +
+                                                            " who target block difficulty value: " + currentBlockDifficulty + "/" +
+                                                            maxPowDifficultyShare + " with Nonce: " + powShare.PowShareNonce +
+                                                            " found the block with the result: " + powShare.PowShareResultCalculation.ToString("F0") +
+                                                            " calculation used: " + powShare.PowShareCalculation);
+                                        }
+                                        else if (powShare.PowDifficultyShare == difficultyTarget)
+                                        {
+                                            Debug.WriteLine("Xiropht PoW hash test: " + powShare.PowShareHash + " with difficulty value of: " +
+                                                            powShare.PowDifficultyShare + " with Nonce Hash: " + powShare.PowShareNonce +
+                                                            " found with the math result: " + powShare.PowShareResultCalculation.ToString("F0") + " calculation used: " +
+                                                            powShare.PowShareCalculation);
+                                        }
+                                        #endregion
+
+#endif
+                                        if (powShare.PowDifficultyShare >= currentBlockDifficulty && powShare.PowDifficultyShare <= maxPowDifficultyShare)
                                         {
                                             Task.Factory.StartNew(async delegate
                                             {
                                                 ClassConsole.WriteLine(
                                                     "PoW share for unlock the block seems to be found, submit it hash: " +
-                                                    powShare.PowShareHash + " | Nonce: " + powShare.PowShareNonce + " and waiting confirmation..\n", 1);
+                                                    powShare.PowShareHash + " | Nonce: " + powShare.PowShareNonce + " and waiting confirmation..\n", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
                                                 string packetShare = ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceivePowJob + ClassConnectorSetting.PacketContentSeperator +
                                                                  powShare.PowDifficultyShare.ToString("F0") + ClassConnectorSetting.PacketContentSeperator +
                                                                  powShare.PowEncryptedShare + ClassConnectorSetting.PacketContentSeperator +
@@ -2359,7 +2457,7 @@ namespace Xiropht_Solo_Miner
                                                                  powShare.PowShareNonce + ClassConnectorSetting.PacketContentSeperator +
                                                                  powShare.PowShareCalculation + ClassConnectorSetting.PacketContentSeperator +
                                                                  powShare.PowShareResultCalculation + ClassConnectorSetting.PacketContentSeperator + CurrentBlockId + ClassConnectorSetting.PacketContentSeperator + Assembly.GetExecutingAssembly().GetName().Version;
-                                                if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(packetShare, string.Empty, false, false))
+                                                if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(packetShare, string.Empty))
                                                 {
                                                     DisconnectNetwork();
                                                 }
@@ -2425,7 +2523,7 @@ namespace Xiropht_Solo_Miner
             TotalMiningCalculationRound[idThread]++;
 
 
-            if (calculCompute - Math.Round(calculCompute, 0) == 0
+            if (calculCompute - Math.Round(calculCompute) == 0
             ) // Check if the result contains decimal places, if yes ignore it. 
             {
                 if (calculCompute >= 2 && calculCompute <= currentBlockDifficulty)
@@ -2502,13 +2600,13 @@ namespace Xiropht_Solo_Miner
                                             ClassConsole.WriteLine(
                                                 "Encryption Speed Thread " + i + " : " + TotalMiningHashrateRound[i] +
                                                 " H/s | Calculation Speed Thread " + i + " : " +
-                                                TotalMiningCalculationRound[i] + " C/s", 4);
+                                                TotalMiningCalculationRound[i] + " C/s", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
                                         }
                                         else
                                         {
                                             ClassConsole.WriteLine(
                                                 "Encryption Speed Thread " + i + " : " + TotalMiningHashrateRound[i] +
-                                                " H/s", 4);
+                                                " H/s", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
                                         }
                                     }
                                 }
@@ -2537,14 +2635,14 @@ namespace Xiropht_Solo_Miner
                                         ClassConsole.WriteLine(
                                             TotalHashrate + " H/s | " + TotalCalculation + " C/s  > ACCEPTED[" +
                                             TotalBlockAccepted + "] REFUSED[" +
-                                            TotalBlockRefused + "]", 4);
+                                            TotalBlockRefused + "]", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
                                     }
                                     else
                                     {
                                         ClassConsole.WriteLine(
                                             TotalHashrate + " H/s | ACCEPTED[" +
                                             TotalBlockAccepted + "] REFUSED[" +
-                                            TotalBlockRefused + "]", 4);
+                                            TotalBlockRefused + "]", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
                                     }
                                 }
 
@@ -2562,8 +2660,7 @@ namespace Xiropht_Solo_Miner
                                 {
                                     if (!await _objectSeedNodeNetwork.SendPacketToSeedNodeAsync(
                                         ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ShareHashrate +
-                                        ClassConnectorSetting.PacketContentSeperator + TotalHashrate, string.Empty,
-                                        false, false))
+                                        ClassConnectorSetting.PacketContentSeperator + TotalHashrate, string.Empty))
                                     {
                                         DisconnectNetwork();
                                     }
@@ -2572,6 +2669,7 @@ namespace Xiropht_Solo_Miner
                         }
                         catch
                         {
+                            // Ignored.
                         }
 
                         await Task.Delay(1000);

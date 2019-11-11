@@ -82,6 +82,7 @@ namespace Xiropht_Solo_Miner.Token
                 }
                 catch
                 {
+                    // Ignored.
                 }
             }
             return false;
@@ -89,7 +90,7 @@ namespace Xiropht_Solo_Miner.Token
 
         private static async Task<string> ProceedHttpRequest(string url, string requestString)
         {
-            string result = string.Empty;
+            string result;
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url + requestString);
             request.AutomaticDecompression = DecompressionMethods.GZip;
@@ -97,7 +98,6 @@ namespace Xiropht_Solo_Miner.Token
             request.KeepAlive = false;
             request.Timeout = 10000;
             request.UserAgent = ClassConnectorSetting.CoinName + "Solo Miner - " + Assembly.GetExecutingAssembly().GetName().Version + "R";
-            string responseContent = string.Empty;
             using (HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsync())
             using (Stream stream = response.GetResponseStream())
             using (StreamReader reader = new StreamReader(stream))

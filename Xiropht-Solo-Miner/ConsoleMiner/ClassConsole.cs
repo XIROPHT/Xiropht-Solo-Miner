@@ -1,11 +1,28 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
-using System.Text.RegularExpressions;
 using Xiropht_Solo_Miner.Utility;
 
 namespace Xiropht_Solo_Miner.ConsoleMiner
 {
+    public class ClassConsoleColorEnumeration
+    {
+        public const int ConsoleTextColorWhite = 0;
+        public const int ConsoleTextColorGreen = 1;
+        public const int ConsoleTextColorYellow = 2;
+        public const int ConsoleTextColorRed = 3;
+        public const int ConsoleTextColorMagenta = 4;
+        public const int ConsoleTextColorBlue = 5;
+    }
+
+    public class ClassConsoleKeyCommandEnumeration
+    {
+        public const string ConsoleCommandKeyHashrate = "h";
+        public const string ConsoleCommandKeyDifficulty = "d";
+        public const string ConsoleCommandKeyCache = "c";
+        public const string ConsoleCommandKeyRange = "r";
+
+    }
+
     public class ClassConsole
     {
         private static PerformanceCounter _ramCounter;
@@ -19,22 +36,22 @@ namespace Xiropht_Solo_Miner.ConsoleMiner
         {
             switch (color)
             {
-                case 0:
+                case ClassConsoleColorEnumeration.ConsoleTextColorWhite:
                     Console.ForegroundColor = ConsoleColor.White;
                     break;
-                case 1:
+                case ClassConsoleColorEnumeration.ConsoleTextColorGreen:
                     Console.ForegroundColor = ConsoleColor.Green;
                     break;
-                case 2:
+                case ClassConsoleColorEnumeration.ConsoleTextColorYellow:
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     break;
-                case 3:
+                case ClassConsoleColorEnumeration.ConsoleTextColorRed:
                     Console.ForegroundColor = ConsoleColor.Red;
                     break;
-                case 4:
+                case ClassConsoleColorEnumeration.ConsoleTextColorMagenta:
                     Console.ForegroundColor = ConsoleColor.Magenta;
                     break;
-                case 5:
+                case ClassConsoleColorEnumeration.ConsoleTextColorBlue:
                     Console.ForegroundColor = ConsoleColor.Blue;
                     break;
             }
@@ -50,32 +67,32 @@ namespace Xiropht_Solo_Miner.ConsoleMiner
         {
             switch (command.ToLower())
             {
-                case "h":
+                case ClassConsoleKeyCommandEnumeration.ConsoleCommandKeyHashrate:
                     if (Program.ClassMinerConfigObject.mining_show_calculation_speed)
                     {
                         WriteLine(
                             Program.TotalHashrate + " H/s | " + Program.TotalCalculation + " C/s > ACCEPTED[" +
                             Program.TotalBlockAccepted + "] REFUSED[" +
-                            Program.TotalBlockRefused + "]", 4);
+                            Program.TotalBlockRefused + "]", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
                     }
                     else
                     {
                         WriteLine(
                             Program.TotalHashrate + " H/s | ACCEPTED[" +
                             Program.TotalBlockAccepted + "] REFUSED[" +
-                            Program.TotalBlockRefused + "]", 4);
+                            Program.TotalBlockRefused + "]", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
                     }
 
                     break;
-                case "d":
+                case ClassConsoleKeyCommandEnumeration.ConsoleCommandKeyDifficulty:
                     WriteLine("Current Block: " + Program.CurrentBlockId + " Difficulty: " +
                               Program.CurrentBlockDifficulty);
                     break;
-                case "c":
+                case ClassConsoleKeyCommandEnumeration.ConsoleCommandKeyCache:
                     if (Program.ClassMinerConfigObject.mining_enable_cache)
                     {
                         var allocationInMb = Process.GetCurrentProcess().PrivateMemorySize64 / 1e+6;
-                        float availbleRam = 0;
+                        float availbleRam;
 
                         if (Environment.OSVersion.Platform == PlatformID.Unix)
                         {
@@ -93,9 +110,13 @@ namespace Xiropht_Solo_Miner.ConsoleMiner
 
                         WriteLine("Current math combinaisons cached: " +  Program.DictionaryCacheMining.Count.ToString("F0") + " | RAM Used: " + allocationInMb + " MB(s) | RAM Available: "+availbleRam+" MB(s).");
                     }
+                    else
+                    {
+                        WriteLine("Mining cache option is not enabled", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
+                    }
 
                     break;
-                case "r":
+                case ClassConsoleKeyCommandEnumeration.ConsoleCommandKeyRange:
                     WriteLine("Current Range: " + Program.CurrentBlockJob.Replace(";", "|"));
                     break;
             }

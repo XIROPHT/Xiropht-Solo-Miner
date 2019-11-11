@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using Newtonsoft.Json.Linq;
 using Xiropht_Connector_All.Mining;
 
 namespace Xiropht_Solo_Miner.Algo
@@ -292,31 +290,7 @@ namespace Xiropht_Solo_Miner.Algo
 
 
 
-#if DEBUG
-            #region Test pow difficulty share value
 
-            decimal difficultyTarget = 1000000;
-
-
-            if (difficultyShareValue >= currentBlockDifficulty && difficultyShareValue <= maxPowDifficultyShare)
-            {
-                Debug.WriteLine("Xiropht PoW hash test: " + powShareHash + " with difficulty value of: " +
-                                difficultyShareValue +
-                                " who target block difficulty value: " + currentBlockDifficulty + "/" +
-                                maxPowDifficultyShare + " with Nonce: " + nonceShareHash +
-                                " found the block with the result: " + result.ToString("F0") +
-                                " calculation used: " + calculation);
-            }
-            else if (difficultyShareValue == difficultyTarget)
-            {
-                Debug.WriteLine("Xiropht PoW hash test: " + powShareHash + " with difficulty value of: " +
-                                difficultyShareValue + " with Nonce Hash: " + nonceShareHash +
-                                " found with the math result: " + result.ToString("F0") + " calculation used: " +
-                                calculation);
-            }
-            #endregion
-
-#endif
 
 
             TotalNonceMining[idThread]++;
@@ -390,7 +364,7 @@ namespace Xiropht_Solo_Miner.Algo
 
             for (int c = 0; c < text.Length; c++)
             {
-                resultXor[c] = ((char)((uint)text[c] ^ (uint)key[c % key.Length]));
+                resultXor[c] = (char)(text[c] ^ (uint)key[c % key.Length]);
             }
             return new string(resultXor, 0, resultXor.Length);
         }
