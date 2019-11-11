@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using Xiropht_Solo_Miner.Mining;
 using Xiropht_Solo_Miner.Utility;
 
 namespace Xiropht_Solo_Miner.ConsoleMiner
@@ -108,7 +109,7 @@ namespace Xiropht_Solo_Miner.ConsoleMiner
                             availbleRam = _ramCounter.NextValue();
                         }
 
-                        WriteLine("Current math combinaisons cached: " +  Program.DictionaryCacheMining.Count.ToString("F0") + " | RAM Used: " + allocationInMb + " MB(s) | RAM Available: "+availbleRam+" MB(s).");
+                        WriteLine("Current math combinaisons cached: " +  ClassMining.DictionaryCacheMining.Count.ToString("F0") + " | RAM Used: " + allocationInMb + " MB(s) | RAM Available: "+availbleRam+" MB(s).");
                     }
                     else
                     {

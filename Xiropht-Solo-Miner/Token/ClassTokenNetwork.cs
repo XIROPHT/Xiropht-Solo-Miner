@@ -88,9 +88,15 @@ namespace Xiropht_Solo_Miner.Token
             return false;
         }
 
+        /// <summary>
+        /// Proceed http get request who target the token network.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="requestString"></param>
+        /// <returns></returns>
         private static async Task<string> ProceedHttpRequest(string url, string requestString)
         {
-            string result;
+            string result = string.Empty;
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url + requestString);
             request.AutomaticDecompression = DecompressionMethods.GZip;
@@ -99,10 +105,17 @@ namespace Xiropht_Solo_Miner.Token
             request.Timeout = 10000;
             request.UserAgent = ClassConnectorSetting.CoinName + "Solo Miner - " + Assembly.GetExecutingAssembly().GetName().Version + "R";
             using (HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsync())
-            using (Stream stream = response.GetResponseStream())
-            using (StreamReader reader = new StreamReader(stream))
             {
-                result = await reader.ReadToEndAsync();
+                using (Stream stream = response.GetResponseStream())
+                {
+                    if (stream != null)
+                    {
+                        using (StreamReader reader = new StreamReader(stream))
+                        {
+                            result = await reader.ReadToEndAsync();
+                        }
+                    }
+                }
             }
 
             return result;

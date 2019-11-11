@@ -78,6 +78,8 @@
     <Compile Include="Algo\ClassAlgoMining.cs" />
     <Compile Include="Cache\ClassMiningCache.cs" />
     <Compile Include="ConsoleMiner\ClassConsole.cs" />
+    <Compile Include="Mining\ClassMining.cs" />
+    <Compile Include="Mining\ClassMiningNetwork.cs" />
     <Compile Include="Setting\ClassStartupArgumentEnumation.cs" />
     <Compile Include="Token\ClassTokenNetwork.cs" />
     <Compile Include="Utility\ClassUtility.cs" />

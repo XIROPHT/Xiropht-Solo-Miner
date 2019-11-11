@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using Xiropht_Solo_Miner.ConsoleMiner;
 
@@ -106,11 +104,11 @@ namespace Xiropht_Solo_Miner.Utility
         private static char[] randomNumberCalculation = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
 
-        [ThreadStatic] private static RNGCryptoServiceProvider GeneratorRngNormal;
-        [ThreadStatic] private static RNGCryptoServiceProvider GeneratorRngSize;
-        [ThreadStatic] private static RNGCryptoServiceProvider GeneratorRngInteger;
-        [ThreadStatic] private static RNGCryptoServiceProvider GeneratorRngJob;
-        [ThreadStatic] private static StringBuilder numberBuilder;
+        [ThreadStatic] private static RNGCryptoServiceProvider _generatorRngNormal;
+        [ThreadStatic] private static RNGCryptoServiceProvider _generatorRngSize;
+        [ThreadStatic] private static RNGCryptoServiceProvider _generatorRngInteger;
+        [ThreadStatic] private static RNGCryptoServiceProvider _generatorRngJob;
+        [ThreadStatic] private static StringBuilder _numberBuilder;
 
 
         /// <summary>
@@ -120,14 +118,14 @@ namespace Xiropht_Solo_Miner.Utility
         public static int GetRandom()
         {
 
-            if (GeneratorRngNormal == null)
+            if (_generatorRngNormal == null)
             {
-                GeneratorRngNormal = new RNGCryptoServiceProvider();
+                _generatorRngNormal = new RNGCryptoServiceProvider();
             }
 
             var randomByte = new byte[sizeof(int)];
 
-            GeneratorRngNormal.GetBytes(randomByte);
+            _generatorRngNormal.GetBytes(randomByte);
 
             return BitConverter.ToInt32(randomByte, 0);
         }
@@ -141,14 +139,14 @@ namespace Xiropht_Solo_Miner.Utility
         public static int GetRandomBetweenSize(int minimumValue, int maximumValue)
         {
 
-            if (GeneratorRngSize == null)
+            if (_generatorRngSize == null)
             {
-                GeneratorRngSize = new RNGCryptoServiceProvider();
+                _generatorRngSize = new RNGCryptoServiceProvider();
             }
 
             byte[] randomByteSize = new byte[1];
 
-            GeneratorRngSize.GetBytes(randomByteSize);
+            _generatorRngSize.GetBytes(randomByteSize);
 
             var asciiValueOfRandomCharacter = Convert.ToDecimal(randomByteSize[0]);
 
@@ -173,14 +171,14 @@ namespace Xiropht_Solo_Miner.Utility
         public static int GetRandomBetween(int minimumValue, int maximumValue)
         {
 
-            if (GeneratorRngInteger == null)
+            if (_generatorRngInteger == null)
             {
-                GeneratorRngInteger = new RNGCryptoServiceProvider();
+                _generatorRngInteger = new RNGCryptoServiceProvider();
             }
 
             byte[] randomByteSize = new byte[sizeof(int)];
 
-            GeneratorRngInteger.GetBytes(randomByteSize);
+            _generatorRngInteger.GetBytes(randomByteSize);
 
             var asciiValueOfRandomCharacter =
                 Convert.ToDecimal(randomByteSize[GetRandomBetweenSize(0, randomByteSize.Length - 1)]);
@@ -206,14 +204,14 @@ namespace Xiropht_Solo_Miner.Utility
         public static decimal GetRandomBetweenJob(decimal minimumValue, decimal maximumValue)
         {
 
-            if (GeneratorRngJob == null)
+            if (_generatorRngJob == null)
             {
-                GeneratorRngJob = new RNGCryptoServiceProvider();
+                _generatorRngJob = new RNGCryptoServiceProvider();
             }
 
             byte[] randomByteSize = new byte[sizeof(decimal)];
 
-            GeneratorRngJob.GetBytes(randomByteSize);
+            _generatorRngJob.GetBytes(randomByteSize);
 
             var asciiValueOfRandomCharacter =
                 Convert.ToDecimal(randomByteSize[GetRandomBetweenSize(0, randomByteSize.Length - 1)]);
@@ -266,7 +264,7 @@ namespace Xiropht_Solo_Miner.Utility
             }
             catch
             {
-
+                // Ignored.
             }
 
             return 0;
@@ -282,13 +280,13 @@ namespace Xiropht_Solo_Miner.Utility
         /// <returns></returns>
         public static decimal GenerateNumberMathCalculation(decimal minRange, decimal maxRange)
         {
-            if (numberBuilder == null)
+            if (_numberBuilder == null)
             {
-                numberBuilder = new StringBuilder();
+                _numberBuilder = new StringBuilder();
             }
             else
             {
-                numberBuilder.Clear();
+                _numberBuilder.Clear();
             }
 
             int randomSize = GetRandomBetweenSize(minRange.ToString("F0").Length, GetRandomBetweenJob(minRange, maxRange).ToString("F0").Length);
@@ -299,12 +297,12 @@ namespace Xiropht_Solo_Miner.Utility
             {
 
 
-                    numberBuilder.Append(
+                    _numberBuilder.Append(
                         randomNumberCalculation[GetRandomBetween(0, randomNumberCalculation.Length - 1)]);
                 
 
                 counter++;
-                if (numberBuilder[0] == randomNumberCalculation[0])
+                if (_numberBuilder[0] == randomNumberCalculation[0])
                 {
                     cleanGenerator = true;
                 }
@@ -313,7 +311,7 @@ namespace Xiropht_Solo_Miner.Utility
                 {
                     if (counter == randomSize)
                     {
-                        if (decimal.TryParse(numberBuilder.ToString(), out var number))
+                        if (decimal.TryParse(_numberBuilder.ToString(), out var number))
                         {
 
                             return number;
@@ -326,14 +324,14 @@ namespace Xiropht_Solo_Miner.Utility
 
                 if (cleanGenerator)
                 {
-                    numberBuilder.Clear();
+                    _numberBuilder.Clear();
                     counter = 0;
                     cleanGenerator = false;
 
                 }
             }
 
-            if (decimal.TryParse(numberBuilder.ToString(), out var numberResult))
+            if (decimal.TryParse(_numberBuilder.ToString(), out var numberResult))
             {
                 return numberResult;
             }
