@@ -25,7 +25,7 @@ namespace Xiropht_Solo_Miner.Token
         public static async Task<bool> CheckWalletAddressExistAsync(string walletAddress)
         {
 
-            if (Program.DictionaryWalletAddressCache.ContainsKey(walletAddress))
+            if (Program.DictionaryWalletAddressValidCache.ContainsKey(walletAddress))
             {
                 return true;
             }

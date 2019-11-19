@@ -24,11 +24,19 @@ namespace Xiropht_Solo_Miner
         /// <summary>
         /// About configuration file.
         /// </summary>
-        private static string ConfigFile = "\\config.json";
+        private static string _configFile = "\\config.json";
         private const string WalletCacheFile = "\\wallet-cache.xiro";
-        private static Thread ThreadConsoleKey;
+        private const string AcceptChoose = "y";
         public static ClassMinerConfig ClassMinerConfigObject;
-        public static Dictionary<string, string> DictionaryWalletAddressCache = new Dictionary<string, string>();
+        public static Dictionary<string, string> DictionaryWalletAddressValidCache = new Dictionary<string, string>();
+
+
+        /// <summary>
+        /// Threads
+        /// </summary>
+        private static Thread _threadConsoleKey;
+
+
 
 
         /// <summary>
@@ -90,7 +98,7 @@ namespace Xiropht_Solo_Miner
                                 case ClassStartupArgumentEnumeration.ConfigFileArgument:
                                     if (splitArgument.Length > 1)
                                     {
-                                        ConfigFile = ClassUtility.ConvertPath(splitArgument[1]);
+                                        _configFile = ClassUtility.ConvertPath(splitArgument[1]);
                                         ClassConsole.WriteLine("Enable using of custom config.json file from path: " + ClassUtility.ConvertPath(splitArgument[1]), 4);
                                         enableCustomConfigPath = true;
                                     }
@@ -102,7 +110,7 @@ namespace Xiropht_Solo_Miner
             }
             if (!enableCustomConfigPath)
             {
-                ConfigFile = ClassUtility.GetCurrentPathConfig(ConfigFile);
+                _configFile = ClassUtility.GetCurrentPathConfig(_configFile);
             }
         }
 
@@ -114,7 +122,7 @@ namespace Xiropht_Solo_Miner
         private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
             e.Cancel = true;
-            Console.WriteLine("Closing miner.");
+            ClassConsole.WriteLine("Closing miner.");
             Process.GetCurrentProcess().Kill();
         }
 
@@ -123,7 +131,7 @@ namespace Xiropht_Solo_Miner
         /// </summary>
         private static void InitializeMiner()
         {
-            if (File.Exists(ClassUtility.ConvertPath(ConfigFile)))
+            if (File.Exists(ClassUtility.ConvertPath(_configFile)))
             {
                 if (LoadConfig())
                 {
@@ -140,7 +148,7 @@ namespace Xiropht_Solo_Miner
                     string choose = Console.ReadLine();
                     if (choose != null)
                     {
-                        if (choose.ToLower() == "y")
+                        if (choose.ToLower() == AcceptChoose)
                         {
                             FirstSettingConfig();
                         }
@@ -171,37 +179,40 @@ namespace Xiropht_Solo_Miner
             ClassMinerConfigObject = new ClassMinerConfig();
             ClassConsole.WriteLine("Do you want to use a proxy instead seed node? [Y/N]", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
             var choose = Console.ReadLine();
-            if (choose == null)
+            while (choose == null)
             {
-                choose = "n";
+                ClassConsole.WriteLine("Your input seems invalid or empty, do you want to use a proxy instead seed node? [Y/N]", ClassConsoleColorEnumeration.ConsoleTextColorRed);
+                choose = Console.ReadLine();
             }
-            if (choose.ToLower() == "y")
+            if (choose.ToLower() == AcceptChoose)
             {
-                Console.WriteLine("Please, write your wallet address or a worker name to start your solo mining: ");
+                ClassConsole.WriteLine("Please, write your wallet address or a worker name to start your solo mining: ");
                 ClassMinerConfigObject.mining_wallet_address = Console.ReadLine();
 
-                Console.WriteLine("Write the IP/HOST of your mining proxy: ");
+                ClassConsole.WriteLine("Write the IP/HOST of your mining proxy: ");
                 ClassMinerConfigObject.mining_proxy_host = Console.ReadLine();
-                Console.WriteLine("Write the port of your mining proxy: ");
 
+                ClassConsole.WriteLine("Write the port of your mining proxy: ");
                 while (!int.TryParse(Console.ReadLine(), out ClassMinerConfigObject.mining_proxy_port))
                 {
-                    Console.WriteLine("This is not a port number, please try again: ");
+                    ClassConsole.WriteLine("This is not a port number, please try again: ", ClassConsoleColorEnumeration.ConsoleTextColorRed);
+                    ClassConsole.WriteLine("Write the port of your mining proxy: ");
                 }
 
-                Console.WriteLine("Do you want select a mining range percentage of difficulty? [Y/N]");
+                ClassConsole.WriteLine("Do you want select a mining range percentage of difficulty? [Y/N]");
                 choose = Console.ReadLine();
-                if (choose == null)
+                while (choose == null)
                 {
-                    choose = "n";
+                    ClassConsole.WriteLine("Your input seems invalid or empty, do you want select a mining range percentage of difficulty? [Y/N]", ClassConsoleColorEnumeration.ConsoleTextColorRed);
+                    choose = Console.ReadLine();
                 }
-                if (choose.ToLower() == "y")
+                if (choose.ToLower() == AcceptChoose)
                 {
-                    Console.WriteLine("Select the start percentage range of difficulty [0 to 100]:");
-                    while (!int.TryParse(Console.ReadLine(),
-                        out ClassMinerConfigObject.mining_percent_difficulty_start))
+                    ClassConsole.WriteLine("Select the start percentage range of difficulty [0 to 100]:");
+                    while (!int.TryParse(Console.ReadLine(), out ClassMinerConfigObject.mining_percent_difficulty_start))
                     {
-                        Console.WriteLine("This is not a number, please try again: ");
+                        ClassConsole.WriteLine("This is not a number, please try again: ", ClassConsoleColorEnumeration.ConsoleTextColorRed);
+                        ClassConsole.WriteLine("Select the start percentage range of difficulty [0 to 100]:");
                     }
 
                     if (ClassMinerConfigObject.mining_percent_difficulty_start > 100)
@@ -214,11 +225,11 @@ namespace Xiropht_Solo_Miner
                         ClassMinerConfigObject.mining_percent_difficulty_start = 0;
                     }
 
-                    Console.WriteLine("Select the end percentage range of difficulty [" +
-                                      ClassMinerConfigObject.mining_percent_difficulty_start + " to 100]: ");
+                    ClassConsole.WriteLine("Select the end percentage range of difficulty [" + ClassMinerConfigObject.mining_percent_difficulty_start + " to 100]: ");
                     while (!int.TryParse(Console.ReadLine(), out ClassMinerConfigObject.mining_percent_difficulty_end))
                     {
-                        Console.WriteLine("This is not a number, please try again: ");
+                        ClassConsole.WriteLine("This is not a number, please try again: ", ClassConsoleColorEnumeration.ConsoleTextColorRed);
+                        ClassConsole.WriteLine("Select the end percentage range of difficulty [" + ClassMinerConfigObject.mining_percent_difficulty_start + " to 100]: ");
                     }
 
                     if (ClassMinerConfigObject.mining_percent_difficulty_end < 1)
@@ -230,17 +241,13 @@ namespace Xiropht_Solo_Miner
                         ClassMinerConfigObject.mining_percent_difficulty_end = 100;
                     }
 
-                    if (ClassMinerConfigObject.mining_percent_difficulty_start >
-                        ClassMinerConfigObject.mining_percent_difficulty_end)
+                    if (ClassMinerConfigObject.mining_percent_difficulty_start > ClassMinerConfigObject.mining_percent_difficulty_end)
                     {
-                        ClassMinerConfigObject.mining_percent_difficulty_start -=
-                            (ClassMinerConfigObject.mining_percent_difficulty_start -
-                             ClassMinerConfigObject.mining_percent_difficulty_end);
+                        ClassMinerConfigObject.mining_percent_difficulty_start -= (ClassMinerConfigObject.mining_percent_difficulty_start - ClassMinerConfigObject.mining_percent_difficulty_end);
                     }
                     else
                     {
-                        if (ClassMinerConfigObject.mining_percent_difficulty_start ==
-                            ClassMinerConfigObject.mining_percent_difficulty_end)
+                        if (ClassMinerConfigObject.mining_percent_difficulty_start == ClassMinerConfigObject.mining_percent_difficulty_end)
                         {
                             ClassMinerConfigObject.mining_percent_difficulty_start--;
                         }
@@ -250,8 +257,7 @@ namespace Xiropht_Solo_Miner
                         ClassMinerConfigObject.mining_percent_difficulty_start)
                     {
                         var tmpPercentStart = ClassMinerConfigObject.mining_percent_difficulty_start;
-                        ClassMinerConfigObject.mining_percent_difficulty_start =
-                            ClassMinerConfigObject.mining_percent_difficulty_end;
+                        ClassMinerConfigObject.mining_percent_difficulty_start = ClassMinerConfigObject.mining_percent_difficulty_end;
                         ClassMinerConfigObject.mining_percent_difficulty_end = tmpPercentStart;
                     }
                 }
@@ -260,32 +266,36 @@ namespace Xiropht_Solo_Miner
             }
             else
             {
-                Console.WriteLine("Please, write your wallet address to start your solo mining: ");
+                ClassConsole.WriteLine("Please, write your wallet address to start your solo mining: ");
                 ClassMinerConfigObject.mining_wallet_address = Console.ReadLine();
-                ClassMinerConfigObject.mining_wallet_address =
-                    ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
+                ClassMinerConfigObject.mining_wallet_address = ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
 
-                ClassConsole.WriteLine("Checking wallet address..", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
-                bool checkWalletAddress = ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
-
-                while (ClassMinerConfigObject.mining_wallet_address.Length <
-                       ClassConnectorSetting.MinWalletAddressSize ||
-                       ClassMinerConfigObject.mining_wallet_address.Length >
-                       ClassConnectorSetting.MaxWalletAddressSize || !checkWalletAddress)
+                while (ClassMinerConfigObject.mining_wallet_address.Length < ClassConnectorSetting.MinWalletAddressSize || ClassMinerConfigObject.mining_wallet_address.Length > ClassConnectorSetting.MaxWalletAddressSize)
                 {
-                    Console.WriteLine(
-                        "Invalid wallet address - Please, write your wallet address to start your solo mining: ");
+                    ClassConsole.WriteLine("Invalid wallet address - Please, write your wallet address to start your solo mining: ", ClassConsoleColorEnumeration.ConsoleTextColorRed);
+                    ClassConsole.WriteLine("Please, write your wallet address to start your solo mining: ");
                     ClassMinerConfigObject.mining_wallet_address = Console.ReadLine();
                     ClassMinerConfigObject.mining_wallet_address = ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
-                    ClassConsole.WriteLine("Checking wallet address..", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
+                }
+
+                ClassConsole.WriteLine("Check your wallet address..", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
+                bool checkWalletAddress = ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
+
+                while (!checkWalletAddress)
+                {
+                    ClassConsole.WriteLine("Invalid wallet address - Please, write your wallet address to start your solo mining: ", ClassConsoleColorEnumeration.ConsoleTextColorRed);
+                    ClassConsole.WriteLine("Please, write your wallet address to start your solo mining: ");
+                    ClassMinerConfigObject.mining_wallet_address = Console.ReadLine();
+                    ClassMinerConfigObject.mining_wallet_address = ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
+
+                    ClassConsole.WriteLine("Check your wallet address..", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
                     checkWalletAddress = ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
                 }
 
                 ClassConsole.WriteLine("Wallet address: " + ClassMinerConfigObject.mining_wallet_address + " is valid.", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
             }
 
-            Console.WriteLine("How many threads do you want to run? Number of cores detected: " +
-                              Environment.ProcessorCount);
+            ClassConsole.WriteLine("How many threads do you want to run? Number of cores detected: " +  Environment.ProcessorCount);
 
             var tmp = Console.ReadLine();
             if (!int.TryParse(tmp, out ClassMinerConfigObject.mining_thread))
@@ -296,27 +306,26 @@ namespace Xiropht_Solo_Miner
             ClassMining.InitializeMiningObjects();
 
 
-            Console.WriteLine("Do you want share job range per thread ? [Y/N]");
+            ClassConsole.WriteLine("Do you want share job range per thread ? [Y/N]");
             choose = Console.ReadLine();
-            if (choose == null)
+            while (choose == null)
             {
-                choose = "n";
+                ClassConsole.WriteLine("Your input seems to be empty or invalid, do you want share job range per thread ? [Y/N]", ClassConsoleColorEnumeration.ConsoleTextColorRed);
+                choose = Console.ReadLine();
             }
-            if (choose.ToLower() == "y")
+            if (choose.ToLower() == AcceptChoose)
             {
                 ClassMinerConfigObject.mining_thread_spread_job = true;
             }
 
             ClassMiningStats.InitializeMiningStats();
 
-            Console.WriteLine(
-                "Select thread priority: 0 = Lowest, 1 = BelowNormal, 2 = Normal, 3 = AboveNormal, 4 = Highest [Default: 2]:");
+            ClassConsole.WriteLine("Select thread priority: 0 = Lowest, 1 = BelowNormal, 2 = Normal, 3 = AboveNormal, 4 = Highest [Default: 2]:");
 
             if (!int.TryParse(Console.ReadLine(), out ClassMinerConfigObject.mining_thread_priority))
             {
                 ClassMinerConfigObject.mining_thread_priority = 2;
             }
-
 
             WriteMinerConfig();
             if (ClassMinerConfigObject.mining_enable_cache)
@@ -333,9 +342,9 @@ namespace Xiropht_Solo_Miner
         /// </summary>
         private static void WriteMinerConfig()
         {
-            ClassConsole.WriteLine("Save: " + ClassUtility.ConvertPath(ConfigFile), 1);
-            File.Create(ClassUtility.ConvertPath(ConfigFile)).Close();
-            using (StreamWriter writeConfig = new StreamWriter(ClassUtility.ConvertPath(ConfigFile))
+            ClassConsole.WriteLine("Save: " + ClassUtility.ConvertPath(_configFile), 1);
+            File.Create(ClassUtility.ConvertPath(_configFile)).Close();
+            using (StreamWriter writeConfig = new StreamWriter(ClassUtility.ConvertPath(_configFile))
             {
                 AutoFlush = true
             })
@@ -352,7 +361,7 @@ namespace Xiropht_Solo_Miner
         {
             string configContent = string.Empty;
 
-            using (StreamReader reader = new StreamReader(ClassUtility.ConvertPath(ConfigFile)))
+            using (StreamReader reader = new StreamReader(ClassUtility.ConvertPath(_configFile)))
             {
                 string line;
                 while ((line = reader.ReadLine()) != null)
@@ -376,7 +385,7 @@ namespace Xiropht_Solo_Miner
                        ClassMinerConfigObject.mining_wallet_address.Length >
                        ClassConnectorSetting.MaxWalletAddressSize || !checkWalletAddress)
                 {
-                    Console.WriteLine(
+                    ClassConsole.WriteLine(
                         "Invalid wallet address inside your config.ini file - Please, write your wallet address to start your solo mining: ");
                     ClassMinerConfigObject.mining_wallet_address = Console.ReadLine();
                     ClassMinerConfigObject.mining_wallet_address =
@@ -452,9 +461,9 @@ namespace Xiropht_Solo_Miner
                         if (line.Length >= ClassConnectorSetting.MinWalletAddressSize &&
                             line.Length <= ClassConnectorSetting.MaxWalletAddressSize)
                         {
-                            if (!DictionaryWalletAddressCache.ContainsKey(line))
+                            if (!DictionaryWalletAddressValidCache.ContainsKey(line))
                             {
-                                DictionaryWalletAddressCache.Add(line, string.Empty);
+                                DictionaryWalletAddressValidCache.Add(line, string.Empty);
                             }
                         }
                     }
@@ -490,7 +499,7 @@ namespace Xiropht_Solo_Miner
         /// </summary>
         private static void EnableConsoleKeyCommand()
         {
-            ThreadConsoleKey = new Thread(delegate ()
+            _threadConsoleKey = new Thread(delegate ()
             {
                 ClassConsole.WriteLine("Command Line: " + ClassConsoleKeyCommandEnumeration.ConsoleCommandKeyHashrate + " -> show hashrate.", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
                 ClassConsole.WriteLine("Command Line: " + ClassConsoleKeyCommandEnumeration.ConsoleCommandKeyDifficulty + " -> show current difficulty.", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
@@ -512,7 +521,7 @@ namespace Xiropht_Solo_Miner
                     }
                 }
             });
-            ThreadConsoleKey.Start();
+            _threadConsoleKey.Start();
         }
     }
 }
