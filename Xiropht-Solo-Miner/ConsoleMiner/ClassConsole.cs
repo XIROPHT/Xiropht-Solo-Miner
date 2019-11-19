@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using Xiropht_Solo_Miner.Cache;
 using Xiropht_Solo_Miner.Mining;
-using Xiropht_Solo_Miner.Utility;
 
 namespace Xiropht_Solo_Miner.ConsoleMiner
 {
@@ -71,23 +71,16 @@ namespace Xiropht_Solo_Miner.ConsoleMiner
                 case ClassConsoleKeyCommandEnumeration.ConsoleCommandKeyHashrate:
                     if (Program.ClassMinerConfigObject.mining_show_calculation_speed)
                     {
-                        WriteLine(
-                            Program.TotalHashrate + " H/s | " + Program.TotalCalculation + " C/s > ACCEPTED[" +
-                            Program.TotalBlockAccepted + "] REFUSED[" +
-                            Program.TotalBlockRefused + "]", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
+                        WriteLine(ClassMiningStats.TotalHashrate + " H/s | " + ClassMiningStats.TotalCalculation + " C/s > ACCEPTED[" + ClassMiningStats.TotalBlockAccepted + "] REFUSED[" + ClassMiningStats.TotalBlockRefused + "]", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
                     }
                     else
                     {
-                        WriteLine(
-                            Program.TotalHashrate + " H/s | ACCEPTED[" +
-                            Program.TotalBlockAccepted + "] REFUSED[" +
-                            Program.TotalBlockRefused + "]", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
+                        WriteLine(ClassMiningStats.TotalHashrate + " H/s | ACCEPTED[" + ClassMiningStats.TotalBlockAccepted + "] REFUSED[" + ClassMiningStats.TotalBlockRefused + "]", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
                     }
 
                     break;
                 case ClassConsoleKeyCommandEnumeration.ConsoleCommandKeyDifficulty:
-                    WriteLine("Current Block: " + Program.CurrentBlockId + " Difficulty: " +
-                              Program.CurrentBlockDifficulty);
+                    WriteLine("Current Block ID: " + ClassMiningNetwork.CurrentBlockId + " | Difficulty: " + ClassMiningNetwork.CurrentBlockDifficulty);
                     break;
                 case ClassConsoleKeyCommandEnumeration.ConsoleCommandKeyCache:
                     if (Program.ClassMinerConfigObject.mining_enable_cache)
@@ -97,7 +90,7 @@ namespace Xiropht_Solo_Miner.ConsoleMiner
 
                         if (Environment.OSVersion.Platform == PlatformID.Unix)
                         {
-                            availbleRam = long.Parse(ClassUtility.RunCommandLineMemoryAvailable());
+                            availbleRam = long.Parse(ClassMiningCache.RunCommandLineMemoryAvailable());
                         }
                         else
                         {
@@ -118,7 +111,7 @@ namespace Xiropht_Solo_Miner.ConsoleMiner
 
                     break;
                 case ClassConsoleKeyCommandEnumeration.ConsoleCommandKeyRange:
-                    WriteLine("Current Range: " + Program.CurrentBlockJob.Replace(";", "|"));
+                    WriteLine("Current Range: " + ClassMiningNetwork.CurrentBlockJob.Replace(ClassMiningBlockSplitEnumeration.MiningBlockJobSplit, "|"));
                     break;
             }
         }

@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using Xiropht_Solo_Miner.ConsoleMiner;
@@ -97,250 +96,36 @@ namespace Xiropht_Solo_Miner.Utility
 
     public class ClassUtility
     {
-
-        #region Math functions
-        public static string[] RandomOperatorCalculation = { "+", "*", "%", "-", "/" };
-
-        private static char[] randomNumberCalculation = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-
-
-        [ThreadStatic] private static RNGCryptoServiceProvider _generatorRngNormal;
-        [ThreadStatic] private static RNGCryptoServiceProvider _generatorRngSize;
-        [ThreadStatic] private static RNGCryptoServiceProvider _generatorRngInteger;
-        [ThreadStatic] private static RNGCryptoServiceProvider _generatorRngJob;
-        [ThreadStatic] private static StringBuilder _numberBuilder;
-
+        private static readonly char[] HexArrayList = "0123456789ABCDEF".ToCharArray();
 
         /// <summary>
-        ///     Get a random number in integer size.
+        ///     Get current path of the miner.
         /// </summary>
         /// <returns></returns>
-        public static int GetRandom()
+        public static string GetCurrentPathConfig(string configFile)
         {
-
-            if (_generatorRngNormal == null)
+            string path = AppDomain.CurrentDomain.BaseDirectory + configFile;
+            if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                _generatorRngNormal = new RNGCryptoServiceProvider();
+                path = path.Replace("\\", "/");
             }
 
-            var randomByte = new byte[sizeof(int)];
-
-            _generatorRngNormal.GetBytes(randomByte);
-
-            return BitConverter.ToInt32(randomByte, 0);
+            return path;
         }
 
         /// <summary>
-        ///     Get a random number in integer size.
-        /// </summary>
-        /// <param name="minimumValue"></param>
-        /// <param name="maximumValue"></param>
-        /// <returns></returns>
-        public static int GetRandomBetweenSize(int minimumValue, int maximumValue)
-        {
-
-            if (_generatorRngSize == null)
-            {
-                _generatorRngSize = new RNGCryptoServiceProvider();
-            }
-
-            byte[] randomByteSize = new byte[1];
-
-            _generatorRngSize.GetBytes(randomByteSize);
-
-            var asciiValueOfRandomCharacter = Convert.ToDecimal(randomByteSize[0]);
-
-            var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255m - 0.00000000001m);
-
-            var range = maximumValue - minimumValue + 1;
-
-            var randomValueInRange = Math.Floor(multiplier * range);
-
-
-            return (int)(minimumValue + randomValueInRange);
-
-        }
-
-
-        /// <summary>
-        ///     Get a random number in integer size.
-        /// </summary>
-        /// <param name="minimumValue"></param>
-        /// <param name="maximumValue"></param>
-        /// <returns></returns>
-        public static int GetRandomBetween(int minimumValue, int maximumValue)
-        {
-
-            if (_generatorRngInteger == null)
-            {
-                _generatorRngInteger = new RNGCryptoServiceProvider();
-            }
-
-            byte[] randomByteSize = new byte[sizeof(int)];
-
-            _generatorRngInteger.GetBytes(randomByteSize);
-
-            var asciiValueOfRandomCharacter =
-                Convert.ToDecimal(randomByteSize[GetRandomBetweenSize(0, randomByteSize.Length - 1)]);
-
-            var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255m - 0.00000000001m);
-
-            var range = maximumValue - minimumValue + 1;
-
-            var randomValueInRange = Math.Floor(multiplier * range);
-
-
-            return (int)(minimumValue + randomValueInRange);
-
-        }
-
-
-        /// <summary>
-        /// Get a random number in float size.
-        /// </summary>
-        /// <param name="minimumValue"></param>
-        /// <param name="maximumValue"></param>
-        /// <returns></returns>
-        public static decimal GetRandomBetweenJob(decimal minimumValue, decimal maximumValue)
-        {
-
-            if (_generatorRngJob == null)
-            {
-                _generatorRngJob = new RNGCryptoServiceProvider();
-            }
-
-            byte[] randomByteSize = new byte[sizeof(decimal)];
-
-            _generatorRngJob.GetBytes(randomByteSize);
-
-            var asciiValueOfRandomCharacter =
-                Convert.ToDecimal(randomByteSize[GetRandomBetweenSize(0, randomByteSize.Length - 1)]);
-
-            var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255m - 0.00000000001m);
-
-            var range = maximumValue - minimumValue + 1;
-
-            var randomValueInRange = Math.Floor(multiplier * range);
-
-
-            return (minimumValue + randomValueInRange);
-
-        }
-
-
-
-
-        /// <summary>
-        /// Return result from a math calculation.
-        /// </summary>
-        /// <param name="firstNumber"></param>
-        /// <param name="operatorCalculation"></param>
-        /// <param name="secondNumber"></param>
-        /// <returns></returns>
-        public static decimal ComputeCalculation(decimal firstNumber, string operatorCalculation, decimal secondNumber)
-        {
-            decimal number1 = firstNumber;
-            decimal number2 = secondNumber;
-            if (number1 == 0 || number2 == 0)
-            {
-                return 0;
-            }
-
-            try
-            {
-                switch (operatorCalculation)
-                {
-                    case "+":
-                        return number1 + number2;
-                    case "-":
-                        return number1 - number2;
-                    case "*":
-                        return number1 * number2;
-                    case "%":
-                        return number1 % number2;
-                    case "/":
-                        return number1 / number2;
-                }
-            }
-            catch
-            {
-                // Ignored.
-            }
-
-            return 0;
-        }
-
-        #endregion
-
-
-
-        /// <summary>
-        /// Return a number for complete a math calculation text.
+        ///     Get current path of the miner.
         /// </summary>
         /// <returns></returns>
-        public static decimal GenerateNumberMathCalculation(decimal minRange, decimal maxRange)
+        public static string ConvertPath(string path)
         {
-            if (_numberBuilder == null)
+            if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                _numberBuilder = new StringBuilder();
-            }
-            else
-            {
-                _numberBuilder.Clear();
+                path = path.Replace("\\", "/");
             }
 
-            int randomSize = GetRandomBetweenSize(minRange.ToString("F0").Length, GetRandomBetweenJob(minRange, maxRange).ToString("F0").Length);
-            int counter = 0;
-
-            bool cleanGenerator = false;
-            while (Program.CanMining)
-            {
-
-
-                    _numberBuilder.Append(
-                        randomNumberCalculation[GetRandomBetween(0, randomNumberCalculation.Length - 1)]);
-                
-
-                counter++;
-                if (_numberBuilder[0] == randomNumberCalculation[0])
-                {
-                    cleanGenerator = true;
-                }
-
-                if (!cleanGenerator)
-                {
-                    if (counter == randomSize)
-                    {
-                        if (decimal.TryParse(_numberBuilder.ToString(), out var number))
-                        {
-
-                            return number;
-
-                        }
-
-                        cleanGenerator = true;
-                    }
-                }
-
-                if (cleanGenerator)
-                {
-                    _numberBuilder.Clear();
-                    counter = 0;
-                    cleanGenerator = false;
-
-                }
-            }
-
-            if (decimal.TryParse(_numberBuilder.ToString(), out var numberResult))
-            {
-                return numberResult;
-            }
-
-            return 0;
+            return path;
         }
-
-
-        #region Other functions 
 
         /// <summary>
         /// Convert a string into hex string.
@@ -372,48 +157,57 @@ namespace Xiropht_Solo_Miner.Utility
         }
 
         /// <summary>
-        /// Necessary to get the amount of ram currently available on Linux OS. 
+        /// Convert a byte array to hex string like Bitconverter class.
         /// </summary>
+        /// <param name="value"></param>
+        /// <param name="startIndex"></param>
+        /// <param name="length"></param>
         /// <returns></returns>
-        public static string RunCommandLineMemoryAvailable()
+        public static string GetHexStringFromByteArray(byte[] value, int startIndex, int length)
         {
-            string commandLine = "awk '/^Mem/ {print $4}' <(free -m)";
-            var errorBuilder = new StringBuilder();
-            var outputBuilder = new StringBuilder();
-            var arguments = $"-c \"{commandLine}\"";
-            using (var process = new Process
+            int newSize = length * 3;
+            char[] hexCharArray = new char[newSize];
+            int currentIndex;
+            for (currentIndex = 0; currentIndex < newSize; currentIndex += 3)
             {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "bash",
-                    Arguments = arguments,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = false
-                }
-            })
-            {
-                process.Start();
-                process.OutputDataReceived += (sender, args) => { outputBuilder.AppendLine(args.Data); };
-                process.BeginOutputReadLine();
-                process.ErrorDataReceived += (sender, args) => { errorBuilder.AppendLine(args.Data); };
-                process.BeginErrorReadLine();
-                if (!process.WaitForExit(500))
-                {
-                    var timeoutError =
-                        $@"Process timed out. Command line: bash {arguments}. Output: {outputBuilder} Error: {errorBuilder}";
-                    throw new Exception(timeoutError);
-                }
-
-                if (process.ExitCode == 0) return outputBuilder.ToString();
-
-                var error =
-                    $@"Could not execute process. Command line: bash {arguments}.Output: {outputBuilder} Error: {errorBuilder}";
-                throw new Exception(error);
+                byte currentByte = value[startIndex++];
+                hexCharArray[currentIndex] = GetHexValue(currentByte / 0x10);
+                hexCharArray[currentIndex + 1] = GetHexValue(currentByte % 0x10);
+                hexCharArray[currentIndex + 2] = '-';
             }
+            return new string(hexCharArray, 0, hexCharArray.Length - 1);
         }
 
-        #endregion
+        /// <summary>
+        /// Get Hex value from char index value.
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        private static char GetHexValue(int i)
+        {
+            if (i < 10)
+            {
+                return (char)(i + 0x30);
+            }
+            return (char)((i - 10) + 0x41);
+        }
+
+        /// <summary>
+        /// Convert a byte array into a hex string
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        public static string ByteArrayToHexString(byte[] bytes)
+        {
+            char[] hexChars = new char[(bytes.Length * 2)];
+            for (int j = 0; j < bytes.Length; j++)
+            {
+                int v = bytes[j] & 255;
+                hexChars[j * 2] = HexArrayList[(int)((uint)v >> 4)];
+                hexChars[(j * 2) + 1] = HexArrayList[v & 15];
+            }
+            return new string(hexChars);
+        }
+
     }
 }

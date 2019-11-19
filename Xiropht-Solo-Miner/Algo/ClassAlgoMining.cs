@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using Xiropht_Connector_All.Mining;
+using Xiropht_Solo_Miner.Mining;
+using Xiropht_Solo_Miner.Utility;
 
 namespace Xiropht_Solo_Miner.Algo
 {
@@ -36,8 +36,6 @@ namespace Xiropht_Solo_Miner.Algo
 
         public static CryptoStream[] CryptoStreamMining;
 
-        private static readonly char[] HexArrayList = "0123456789ABCDEF".ToCharArray();
-
         public static int[] TotalNonceMining;
 
 
@@ -56,8 +54,7 @@ namespace Xiropht_Solo_Miner.Algo
 
             if (CryptoStreamMining[idThread] == null)
             {
-                CryptoStreamMining[idThread] = new CryptoStream(MemoryStreamMining[idThread],
-                    CryptoTransformMining[idThread], CryptoStreamMode.Write);
+                CryptoStreamMining[idThread] = new CryptoStream(MemoryStreamMining[idThread], CryptoTransformMining[idThread], CryptoStreamMode.Write);
             }
 
             #region Do mining work
@@ -81,10 +78,9 @@ namespace Xiropht_Solo_Miner.Algo
             #region Translate Mining work
 
             byte[] resultByteShare = MemoryStreamMining[idThread].ToArray();
-            string result = GetHexStringFromByteArray(resultByteShare, 0, resultByteShare.Length);
+            string result = ClassUtility.GetHexStringFromByteArray(resultByteShare, 0, resultByteShare.Length);
 
             #endregion
-
 
             #region Cleanup work
             CryptoStreamMining[idThread] = new CryptoStream(MemoryStreamMining[idThread], CryptoTransformMining[idThread], CryptoStreamMode.Write);
@@ -96,7 +92,6 @@ namespace Xiropht_Solo_Miner.Algo
 
             return result;
         }
-
 
         /// <summary>
         /// Do PoW share from Exact Share Mining System.
@@ -112,7 +107,6 @@ namespace Xiropht_Solo_Miner.Algo
         /// <param name="maxPowDifficultyShare"></param>
         public static ClassPowShareObject DoPowShare(string share, string hashTarget, int idThread, decimal currentBlockDifficulty, decimal result, decimal firstNumber, decimal secondNumber, string calculation, decimal maxPowDifficultyShare)
         {
-
             if (TotalNonceMining[idThread] >= ClassPowSetting.MaxNonceValue)
             {
                 TotalNonceMining[idThread] = 0;
@@ -124,7 +118,7 @@ namespace Xiropht_Solo_Miner.Algo
 
             byte[] byteShareArray = Encoding.ASCII.GetBytes(share);
 
-            byte[] byteTargetShareArray = Encoding.ASCII.GetBytes(Program.CurrentBlockIndication);
+            byte[] byteTargetShareArray = Encoding.ASCII.GetBytes(ClassMiningNetwork.CurrentBlockIndication);
 
             byte[] nonceHashingArray = new byte[ClassPowSetting.NonceShareSize];
 
@@ -183,12 +177,11 @@ namespace Xiropht_Solo_Miner.Algo
 
             #region Generate Pow Share Hash and Nonce Share Hash
 
-            var powShareHash = ByteArrayToHexString(mergedShareArray).ToLower();
+            var powShareHash = ClassUtility.ByteArrayToHexString(mergedShareArray).ToLower();
 
-            var nonceShareHash = ByteArrayToHexString(nonceHashingArray).ToLower();
+            var nonceShareHash = ClassUtility.ByteArrayToHexString(nonceHashingArray).ToLower();
 
             #endregion
-
 
             #region Calculate percentage of value of the PoW Share with the share target value.
 
@@ -288,11 +281,6 @@ namespace Xiropht_Solo_Miner.Algo
 
             #endregion
 
-
-
-
-
-
             TotalNonceMining[idThread]++;
 
             #region Cleanup work
@@ -316,41 +304,6 @@ namespace Xiropht_Solo_Miner.Algo
             };
         }
 
-        /// <summary>
-        /// Convert a byte array to hex string like Bitconverter class.
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="startIndex"></param>
-        /// <param name="length"></param>
-        /// <returns></returns>
-        public static string GetHexStringFromByteArray(byte[] value, int startIndex, int length)
-        {
-            int newSize = length * 3;
-            char[] hexCharArray = new char[newSize];
-            int currentIndex;
-            for (currentIndex = 0; currentIndex < newSize; currentIndex += 3)
-            {
-                byte currentByte = value[startIndex++];
-                hexCharArray[currentIndex] = GetHexValue(currentByte / 0x10);
-                hexCharArray[currentIndex + 1] = GetHexValue(currentByte % 0x10);
-                hexCharArray[currentIndex + 2] = '-';
-            }
-            return new string(hexCharArray, 0, hexCharArray.Length - 1);
-        }
-
-        /// <summary>
-        /// Get Hex value from char index value.
-        /// </summary>
-        /// <param name="i"></param>
-        /// <returns></returns>
-        private static char GetHexValue(int i)
-        {
-            if (i < 10)
-            {
-                return (char)(i + 0x30);
-            }
-            return (char)((i - 10) + 0x41);
-        }
 
         /// <summary>
         /// Encrypt share with XOR.
@@ -384,26 +337,8 @@ namespace Xiropht_Solo_Miner.Algo
 
             var bytes = Encoding.UTF8.GetBytes(input);
 
-           return ByteArrayToHexString(Sha512ManagedMining[idThread].ComputeHash(bytes));
+           return ClassUtility.ByteArrayToHexString(Sha512ManagedMining[idThread].ComputeHash(bytes));
 
-        }
-
-
-        /// <summary>
-        /// Convert a byte array into a hex string
-        /// </summary>
-        /// <param name="bytes"></param>
-        /// <returns></returns>
-        public static string ByteArrayToHexString(byte[] bytes)
-        {
-            char[] hexChars = new char[(bytes.Length * 2)];
-            for (int j = 0; j < bytes.Length; j++)
-            {
-                int v = bytes[j] & 255;
-                hexChars[j * 2] = HexArrayList[(int)((uint)v >> 4)];
-                hexChars[(j * 2) + 1] = HexArrayList[v & 15];
-            }
-            return new string(hexChars);
         }
 
     }

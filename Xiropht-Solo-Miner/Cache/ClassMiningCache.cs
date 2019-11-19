@@ -1,18 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Xiropht_Solo_Miner.Utility;
+using System.Text;
 
 namespace Xiropht_Solo_Miner.Cache
 {
     public class ClassMiningCache
     {
         public List<Dictionary<string, int>> MiningListCache;
-        private const int MaxMathCombinaisonPerCache = int.MaxValue-1;
+        private const int MaxMathCombinaisonPerDictionaryCache = int.MaxValue-1;
         private const int RamCounterInterval = 30; // Each 30 seconds.
+        private const long RamLimitInMb = 128;
         private PerformanceCounter _ramCounter = new PerformanceCounter("Memory", "Available MBytes", true);
         private long _lastDateRamCounted;
-        private long _ramLimitInMb = 128;
 
         /// <summary>
         /// Constructor.
@@ -74,9 +74,9 @@ namespace Xiropht_Solo_Miner.Cache
             {
                 if (Environment.OSVersion.Platform == PlatformID.Unix)
                 {
-                    var availbleRam = long.Parse(ClassUtility.RunCommandLineMemoryAvailable());
+                    var availbleRam = long.Parse(RunCommandLineMemoryAvailable());
                     _lastDateRamCounted = DateTimeOffset.Now.ToUnixTimeSeconds() + RamCounterInterval;
-                    if (availbleRam <= _ramLimitInMb)
+                    if (availbleRam <= RamLimitInMb)
                     {
                         return true;
                     }
@@ -86,7 +86,7 @@ namespace Xiropht_Solo_Miner.Cache
 
                     float availbleRam = _ramCounter.NextValue();
                     _lastDateRamCounted = DateTimeOffset.Now.ToUnixTimeSeconds() + RamCounterInterval;
-                    if (availbleRam <= _ramLimitInMb)
+                    if (availbleRam <= RamLimitInMb)
                     {
                         return true;
                     }
@@ -104,7 +104,7 @@ namespace Xiropht_Solo_Miner.Cache
                         {
                             if (i < MiningListCache.Count)
                             {
-                                if (MiningListCache[i].Count < MaxMathCombinaisonPerCache)
+                                if (MiningListCache[i].Count < MaxMathCombinaisonPerDictionaryCache)
                                 {
                                     if (MiningListCache[i].ContainsKey(combinaison))
                                     {
@@ -169,5 +169,45 @@ namespace Xiropht_Solo_Miner.Cache
             return totalCombinaison;
         }
 
+        /// <summary>
+        /// Necessary to get the amount of ram currently available on Linux OS. 
+        /// </summary>
+        /// <returns></returns>
+        public static string RunCommandLineMemoryAvailable()
+        {
+            string commandLine = "awk '/^Mem/ {print $4}' <(free -m)";
+            var errorBuilder = new StringBuilder();
+            var outputBuilder = new StringBuilder();
+            var arguments = $"-c \"{commandLine}\"";
+            using (var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "bash",
+                    Arguments = arguments,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = false
+                }
+            })
+            {
+                process.Start();
+                process.OutputDataReceived += (sender, args) => { outputBuilder.AppendLine(args.Data); };
+                process.BeginOutputReadLine();
+                process.ErrorDataReceived += (sender, args) => { errorBuilder.AppendLine(args.Data); };
+                process.BeginErrorReadLine();
+                if (!process.WaitForExit(500))
+                {
+                    var timeoutError = $@"Process timed out. Command line: bash {arguments}. Output: {outputBuilder} Error: {errorBuilder}";
+                    throw new Exception(timeoutError);
+                }
+
+                if (process.ExitCode == 0) return outputBuilder.ToString();
+
+                var error = $@"Could not execute process. Command line: bash {arguments}.Output: {outputBuilder} Error: {errorBuilder}";
+                throw new Exception(error);
+            }
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,9 +8,32 @@ using Xiropht_Connector_All.Setting;
 using Xiropht_Connector_All.SoloMining;
 using Xiropht_Connector_All.Utils;
 using Xiropht_Solo_Miner.ConsoleMiner;
+// ReSharper disable FunctionNeverReturns
 
 namespace Xiropht_Solo_Miner.Mining
 {
+    public class ClassMiningBlockSplitEnumeration
+    {
+        private const string MiningBlockCharacterSeperator = "=";
+        public const string MiningBlockCharacterSplit = "&";
+        public const string MiningBlockMethodSplit = "#";
+        public const string MiningBlockJobSplit = ";";
+
+        public const string MiningBlockId = "ID" + MiningBlockCharacterSeperator;
+        public const string MiningBlockHash = "HASH" + MiningBlockCharacterSeperator;
+        public const string MiningBlockAlgorithm = "ALGORITHM" + MiningBlockCharacterSeperator;
+        public const string MiningBlockSize = "SIZE" + MiningBlockCharacterSeperator;
+        public const string MiningBlockMethod = "METHOD" + MiningBlockCharacterSeperator;
+        public const string MiningBlockKey = "KEY" + MiningBlockCharacterSeperator;
+        public const string MiningBlockJob = "JOB" + MiningBlockCharacterSeperator;
+        public const string MiningBlockReward = "REWARD" + MiningBlockCharacterSeperator;
+        public const string MiningBlockDifficulty = "DIFFICULTY" + MiningBlockCharacterSeperator;
+        public const string MiningBlockTimestampCreate = "TIMESTAMP" + MiningBlockCharacterSeperator;
+        public const string MiningBlockIndication = "INDICATION" + MiningBlockCharacterSeperator;
+        public const string MiningBlockNetworkHashrate = "NETWORK_HASHRATE" + MiningBlockCharacterSeperator;
+        public const string MiningBlockLifetime = "LIFETIME" + MiningBlockCharacterSeperator;
+    }
+
     public class ClassMiningNetwork
     {
         private const int ThreadCheckNetworkInterval = 1 * 1000; // Check each 5 seconds.
@@ -23,6 +47,29 @@ namespace Xiropht_Solo_Miner.Mining
         private static bool _loginAccepted;
         private const int TimeoutPacketReceived = 60; // Max 60 seconds.
 
+
+        /// <summary>
+        ///     Current block information for mining it.
+        /// </summary>
+        public static string CurrentBlockId;
+        public static string CurrentBlockHash;
+        public static string CurrentBlockAlgorithm;
+        public static string CurrentBlockSize;
+        public static string CurrentBlockMethod;
+        public static string CurrentBlockKey;
+        public static string CurrentBlockJob;
+        public static string CurrentBlockReward;
+        public static string CurrentBlockDifficulty;
+        public static string CurrentBlockTimestampCreate;
+        public static string CurrentBlockIndication;
+        public static string CurrentBlockNetworkHashrate;
+        public static string CurrentBlockLifetime;
+
+        /// <summary>
+        ///     For mining method.
+        /// </summary>
+        public static List<string> ListeMiningMethodName = new List<string>();
+        public static List<string> ListeMiningMethodContent = new List<string>();
 
         /// <summary>
         ///     Start to connect the miner to the network
@@ -132,8 +179,7 @@ namespace Xiropht_Solo_Miner.Mining
                         {
                             ClassConsole.WriteLine("Miner connection lost or aborted, retry to connect..", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                             ClassMining.StopMining();
-                            Program.CurrentBlockId = "";
-                            Program.CurrentBlockHash = "";
+                            CleanNetworkBlockInformations();
                             DisconnectNetwork();
                             while (!await StartConnectMinerAsync())
                             {
@@ -146,8 +192,7 @@ namespace Xiropht_Solo_Miner.Mining
                     {
                         ClassConsole.WriteLine("Miner connection lost or aborted, retry to connect..", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                         ClassMining.StopMining();
-                        Program.CurrentBlockId = "";
-                        Program.CurrentBlockHash = "";
+                        CleanNetworkBlockInformations();
                         DisconnectNetwork();
                         while (!await StartConnectMinerAsync())
                         {
@@ -159,6 +204,15 @@ namespace Xiropht_Solo_Miner.Mining
                     await Task.Delay(ThreadCheckNetworkInterval);
                 }
             }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Current).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Clean network block informations.
+        /// </summary>
+        private static void CleanNetworkBlockInformations()
+        {
+            CurrentBlockId = string.Empty;
+            CurrentBlockHash = string.Empty;
         }
 
         /// <summary>
@@ -213,11 +267,7 @@ namespace Xiropht_Solo_Miner.Mining
 
                             if (!Program.ClassMinerConfigObject.mining_enable_proxy)
                             {
-                                string packet =
-                                    await ObjectSeedNodeNetwork.ReceivePacketFromSeedNodeAsync(
-                                        CertificateConnection,
-                                        false,
-                                        true);
+                                string packet = await ObjectSeedNodeNetwork.ReceivePacketFromSeedNodeAsync(CertificateConnection, false, true);
                                 if (packet == ClassSeedNodeStatus.SeedError)
                                 {
                                     ClassConsole.WriteLine("Network error received. Waiting network checker..", ClassConsoleColorEnumeration.ConsoleTextColorRed);
@@ -236,28 +286,22 @@ namespace Xiropht_Solo_Miner.Mining
                                         }
                                     }
 
-                                    var splitPacket = packet.Split(
-                                        new[] { ClassConnectorSetting.PacketSplitSeperator },
-                                        StringSplitOptions.None);
+                                    var splitPacket = packet.Split(new[] { ClassConnectorSetting.PacketSplitSeperator }, StringSplitOptions.None);
                                     foreach (var packetEach in splitPacket)
                                     {
                                         if (!string.IsNullOrEmpty(packetEach))
                                         {
                                             if (packetEach.Length > 1)
                                             {
-                                                var packetRequest =
-                                                    packetEach.Replace(ClassConnectorSetting.PacketSplitSeperator,
-                                                        "");
+                                                var packetRequest = packetEach.Replace(ClassConnectorSetting.PacketSplitSeperator,"");
                                                 if (packetRequest == ClassSeedNodeStatus.SeedError)
                                                 {
-                                                    ClassConsole.WriteLine(
-                                                        "Network error received. Waiting network checker..", ClassConsoleColorEnumeration.ConsoleTextColorRed);
+                                                    ClassConsole.WriteLine("Network error received. Waiting network checker..", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                                                     DisconnectNetwork();
                                                     break;
                                                 }
 
-                                                if (packetRequest != ClassSeedNodeStatus.SeedNone &&
-                                                    packetRequest != ClassSeedNodeStatus.SeedError)
+                                                if (packetRequest != ClassSeedNodeStatus.SeedNone && packetRequest != ClassSeedNodeStatus.SeedError)
                                                 {
                                                     await HandlePacketMiningAsync(packetRequest);
                                                 }
@@ -267,10 +311,7 @@ namespace Xiropht_Solo_Miner.Mining
                                 }
                                 else
                                 {
-                                    if (MalformedPacket != null && (MalformedPacket.Length < int.MaxValue - 1 ||
-                                                                    (long)(MalformedPacket.Length +
-                                                                            packet.Length) <
-                                                                    int.MaxValue - 1))
+                                    if (MalformedPacket != null && (MalformedPacket.Length < int.MaxValue - 1 || (long)(MalformedPacket.Length + packet.Length) < int.MaxValue - 1))
                                     {
                                         MalformedPacket += packet;
                                     }
@@ -320,47 +361,40 @@ namespace Xiropht_Solo_Miner.Mining
             LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();
             try
             {
-                var splitPacket = packet.Split(new[] { ClassConnectorSetting.PacketContentSeperator },
-                    StringSplitOptions.None);
+                var splitPacket = packet.Split(new[] { ClassConnectorSetting.PacketContentSeperator }, StringSplitOptions.None);
                 switch (splitPacket[0])
                 {
                     case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.SendLoginAccepted:
-                        Program.CalculateHashrate();
+                        ClassMiningStats.ShowHashrate();
                         ClassConsole.WriteLine("Miner login accepted, start to mine..", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
                         _loginAccepted = true;
                         MiningProcessingRequest();
                         break;
                     case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.SendListBlockMethod:
                         var methodList = splitPacket[1];
-
                         try
                         {
                             await Task.Factory.StartNew(async delegate
                             {
-                                if (methodList.Contains("#"))
+                                if (methodList.Contains(ClassMiningBlockSplitEnumeration.MiningBlockMethodSplit))
                                 {
-                                    var splitMethodList =
-                                        methodList.Split(new[] { "#" }, StringSplitOptions.None);
-                                    if (Program.ListeMiningMethodName.Count > 1)
+                                    var splitMethodList = methodList.Split(new[] { ClassMiningBlockSplitEnumeration.MiningBlockMethodSplit }, StringSplitOptions.None);
+                                    if (ListeMiningMethodName.Count > 1)
                                     {
                                         foreach (var methodName in splitMethodList)
                                         {
                                             if (!string.IsNullOrEmpty(methodName))
                                             {
-                                                if (Program.ListeMiningMethodName.Contains(methodName) == false)
+                                                if (ListeMiningMethodName.Contains(methodName) == false)
                                                 {
-                                                    Program.ListeMiningMethodName.Add(methodName);
+                                                    ListeMiningMethodName.Add(methodName);
                                                 }
 
                                                 if (!Program.ClassMinerConfigObject.mining_enable_proxy)
                                                 {
-                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                        ClassSoloMiningPacketEnumeration
-                                                            .SoloMiningSendPacketEnumeration
-                                                            .ReceiveAskContentBlockMethod +
+                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskContentBlockMethod +
                                                         ClassConnectorSetting.PacketContentSeperator +
-                                                        methodName + ClassConnectorSetting
-                                                            .PacketMiningSplitSeperator,
+                                                        methodName + ClassConnectorSetting.PacketMiningSplitSeperator,
                                                         CertificateConnection, false, true))
                                                     {
                                                         DisconnectNetwork();
@@ -369,10 +403,7 @@ namespace Xiropht_Solo_Miner.Mining
                                                 }
                                                 else
                                                 {
-                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                        ClassSoloMiningPacketEnumeration
-                                                            .SoloMiningSendPacketEnumeration
-                                                            .ReceiveAskContentBlockMethod +
+                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskContentBlockMethod +
                                                         ClassConnectorSetting.PacketContentSeperator +
                                                         methodName,
                                                         string.Empty))
@@ -393,17 +424,14 @@ namespace Xiropht_Solo_Miner.Mining
                                         {
                                             if (!string.IsNullOrEmpty(methodName))
                                             {
-                                                if (Program.ListeMiningMethodName.Contains(methodName) == false)
+                                                if (ListeMiningMethodName.Contains(methodName) == false)
                                                 {
-                                                    Program.ListeMiningMethodName.Add(methodName);
+                                                    ListeMiningMethodName.Add(methodName);
                                                 }
 
                                                 if (!Program.ClassMinerConfigObject.mining_enable_proxy)
                                                 {
-                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                        ClassSoloMiningPacketEnumeration
-                                                            .SoloMiningSendPacketEnumeration
-                                                            .ReceiveAskContentBlockMethod +
+                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskContentBlockMethod +
                                                         ClassConnectorSetting.PacketContentSeperator +
                                                         methodName + ClassConnectorSetting
                                                             .PacketMiningSplitSeperator,
@@ -415,10 +443,7 @@ namespace Xiropht_Solo_Miner.Mining
                                                 }
                                                 else
                                                 {
-                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                        ClassSoloMiningPacketEnumeration
-                                                            .SoloMiningSendPacketEnumeration
-                                                            .ReceiveAskContentBlockMethod +
+                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskContentBlockMethod +
                                                         ClassConnectorSetting.PacketContentSeperator +
                                                         methodName,
                                                         string.Empty))
@@ -436,16 +461,14 @@ namespace Xiropht_Solo_Miner.Mining
                                 }
                                 else
                                 {
-                                    if (Program.ListeMiningMethodName.Contains(methodList) == false)
+                                    if (ListeMiningMethodName.Contains(methodList) == false)
                                     {
-                                        Program.ListeMiningMethodName.Add(methodList);
+                                        ListeMiningMethodName.Add(methodList);
                                     }
 
                                     if (!Program.ClassMinerConfigObject.mining_enable_proxy)
                                     {
-                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                            ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
-                                                .ReceiveAskContentBlockMethod +
+                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskContentBlockMethod +
                                             ClassConnectorSetting.PacketContentSeperator + methodList +
                                             ClassConnectorSetting.PacketMiningSplitSeperator,
                                             CertificateConnection, false,
@@ -456,9 +479,7 @@ namespace Xiropht_Solo_Miner.Mining
                                     }
                                     else
                                     {
-                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                            ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
-                                                .ReceiveAskContentBlockMethod +
+                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskContentBlockMethod +
                                             ClassConnectorSetting.PacketContentSeperator + methodList,
                                             string.Empty))
                                         {
@@ -473,56 +494,53 @@ namespace Xiropht_Solo_Miner.Mining
                         {
                             // Catch the exception once the task is cancelled.
                         }
-
                         break;
                     case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.SendContentBlockMethod:
-                        if (Program.ListeMiningMethodContent.Count == 0)
+                        if (ListeMiningMethodContent.Count == 0)
                         {
-                            Program.ListeMiningMethodContent.Add(splitPacket[1]);
+                            ListeMiningMethodContent.Add(splitPacket[1]);
                         }
                         else
                         {
-                            Program.ListeMiningMethodContent[0] = splitPacket[1];
+                            ListeMiningMethodContent[0] = splitPacket[1];
                         }
 
                         break;
                     case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.SendCurrentBlockMining:
 
-                        var splitBlockContent = splitPacket[1].Split(new[] { "&" }, StringSplitOptions.None);
+                        var splitBlockContent = splitPacket[1].Split(new[] { ClassMiningBlockSplitEnumeration.MiningBlockCharacterSplit }, StringSplitOptions.None);
 
-                        if (Program.CurrentBlockId != splitBlockContent[0].Replace("ID=", "") ||
-                            Program.CurrentBlockHash != splitBlockContent[1].Replace("HASH=", ""))
+                        string currentBlockId = splitBlockContent[0].Replace(ClassMiningBlockSplitEnumeration.MiningBlockId, "");
+                        string currentBlockHash = splitBlockContent[1].Replace(ClassMiningBlockSplitEnumeration.MiningBlockHash, "");
+
+                        if (CurrentBlockId != currentBlockId || CurrentBlockHash != currentBlockHash)
                         {
-                            if (!Program.ClassMinerConfigObject.mining_enable_proxy)
-                            {
-                                ClassConsole.WriteLine("New block to mine " + splitBlockContent[0], 2);
-                            }
-                            else
-                            {
-                                ClassConsole.WriteLine("Current block to mine " + splitBlockContent[0], 2);
-                            }
 
                             try
                             {
-                                if (Program.CurrentBlockId == splitBlockContent[0].Replace("ID=", ""))
+
+                                if (CurrentBlockId == splitBlockContent[0].Replace(ClassMiningBlockSplitEnumeration.MiningBlockId, ""))
                                 {
-                                    ClassConsole.WriteLine(
-                                        "Current Block ID: " + Program.CurrentBlockId + " has been renewed.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
+                                    ClassConsole.WriteLine("Current Block ID: " + CurrentBlockId + " has been renewed.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
+                                }
+                                else
+                                {
+                                    ClassConsole.WriteLine("New Block ID to mine " + currentBlockId, ClassConsoleColorEnumeration.ConsoleTextColorYellow);
                                 }
 
-                                Program.CurrentBlockId = splitBlockContent[0].Replace("ID=", "");
-                                Program.CurrentBlockHash = splitBlockContent[1].Replace("HASH=", "");
-                                Program.CurrentBlockAlgorithm = splitBlockContent[2].Replace("ALGORITHM=", "");
-                                Program.CurrentBlockSize = splitBlockContent[3].Replace("SIZE=", "");
-                                Program.CurrentBlockMethod = splitBlockContent[4].Replace("METHOD=", "");
-                                Program.CurrentBlockKey = splitBlockContent[5].Replace("KEY=", "");
-                                Program.CurrentBlockJob = splitBlockContent[6].Replace("JOB=", "");
-                                Program.CurrentBlockReward = splitBlockContent[7].Replace("REWARD=", "");
-                                Program.CurrentBlockDifficulty = splitBlockContent[8].Replace("DIFFICULTY=", "");
-                                Program.CurrentBlockTimestampCreate = splitBlockContent[9].Replace("TIMESTAMP=", "");
-                                Program.CurrentBlockIndication = splitBlockContent[10].Replace("INDICATION=", "");
-                                Program.CurrentBlockNetworkHashrate = splitBlockContent[11].Replace("NETWORK_HASHRATE=", "");
-                                Program.CurrentBlockLifetime = splitBlockContent[12].Replace("LIFETIME=", "");
+                                CurrentBlockId = currentBlockId;
+                                CurrentBlockHash = currentBlockHash;
+                                CurrentBlockAlgorithm = splitBlockContent[2].Replace(ClassMiningBlockSplitEnumeration.MiningBlockAlgorithm, "");
+                                CurrentBlockSize = splitBlockContent[3].Replace(ClassMiningBlockSplitEnumeration.MiningBlockSize, "");
+                                CurrentBlockMethod = splitBlockContent[4].Replace(ClassMiningBlockSplitEnumeration.MiningBlockMethod, "");
+                                CurrentBlockKey = splitBlockContent[5].Replace(ClassMiningBlockSplitEnumeration.MiningBlockKey, "");
+                                CurrentBlockJob = splitBlockContent[6].Replace(ClassMiningBlockSplitEnumeration.MiningBlockJob, "");
+                                CurrentBlockReward = splitBlockContent[7].Replace(ClassMiningBlockSplitEnumeration.MiningBlockReward, "");
+                                CurrentBlockDifficulty = splitBlockContent[8].Replace(ClassMiningBlockSplitEnumeration.MiningBlockDifficulty, "");
+                                CurrentBlockTimestampCreate = splitBlockContent[9].Replace(ClassMiningBlockSplitEnumeration.MiningBlockTimestampCreate, "");
+                                CurrentBlockIndication = splitBlockContent[10].Replace(ClassMiningBlockSplitEnumeration.MiningBlockIndication, "");
+                                CurrentBlockNetworkHashrate = splitBlockContent[11].Replace(ClassMiningBlockSplitEnumeration.MiningBlockNetworkHashrate, "");
+                                CurrentBlockLifetime = splitBlockContent[12].Replace(ClassMiningBlockSplitEnumeration.MiningBlockLifetime, "");
 
 
 
@@ -531,29 +549,30 @@ namespace Xiropht_Solo_Miner.Mining
                                 {
                                     ClassMining.ClearMiningCache();
                                 }
+                                ClassMining.ClearMiningObjects();
+                                ClassMining.InitializeMiningObjects();
 
-                                Program.CanMining = true;
-                                var splitCurrentBlockJob = Program.CurrentBlockJob.Split(new[] { ";" }, StringSplitOptions.None);
+
+                                ClassMiningStats.CanMining = true;
+                                var splitCurrentBlockJob = CurrentBlockJob.Split(new[] { ClassMiningBlockSplitEnumeration.MiningBlockJobSplit }, StringSplitOptions.None);
                                 var minRange = decimal.Parse(splitCurrentBlockJob[0]);
                                 var maxRange = decimal.Parse(splitCurrentBlockJob[1]);
 
 
                                 if (Program.ClassMinerConfigObject.mining_enable_proxy)
                                 {
-                                    ClassConsole.WriteLine(
-                                        "Job range received from proxy: " + minRange +
-                                        ClassConnectorSetting.PacketContentSeperator + maxRange + "", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
+                                    ClassConsole.WriteLine("Job range received from proxy: " + minRange.ToString("F0") + ClassConnectorSetting.PacketContentSeperator + maxRange.ToString("F0") + "", ClassConsoleColorEnumeration.ConsoleTextColorYellow);
                                 }
 
 
                                 int idMethod = 0;
-                                if (Program.ListeMiningMethodName.Count >= 1)
+                                if (ListeMiningMethodName.Count >= 1)
                                 {
-                                    for (int i = 0; i < Program.ListeMiningMethodName.Count; i++)
+                                    for (int i = 0; i < ListeMiningMethodName.Count; i++)
                                     {
-                                        if (i < Program.ListeMiningMethodName.Count)
+                                        if (i < ListeMiningMethodName.Count)
                                         {
-                                            if (Program.ListeMiningMethodName[i] == Program.CurrentBlockMethod)
+                                            if (ListeMiningMethodName[i] == CurrentBlockMethod)
                                             {
                                                 idMethod = i;
                                             }
@@ -561,7 +580,7 @@ namespace Xiropht_Solo_Miner.Mining
                                     }
                                 }
 
-                                var splitMethod = Program.ListeMiningMethodContent[idMethod].Split(new[] { "#" }, StringSplitOptions.None);
+                                var splitMethod = ListeMiningMethodContent[idMethod].Split(new[] { ClassMiningBlockSplitEnumeration.MiningBlockMethodSplit }, StringSplitOptions.None);
 
                                 ClassMining.CurrentRoundAesRound = int.Parse(splitMethod[0]);
                                 ClassMining.CurrentRoundAesSize = int.Parse(splitMethod[1]);
@@ -582,7 +601,7 @@ namespace Xiropht_Solo_Miner.Mining
                             }
                             catch (Exception error)
                             {
-                                ClassConsole.WriteLine("Block template not completly received, stop mining and ask again the blocktemplate | Exception: " + error.Message, 2);
+                                ClassConsole.WriteLine("Block template not completly received, stop mining and ask again the blocktemplate | Exception: " + error.Message, ClassConsoleColorEnumeration.ConsoleTextColorYellow);
                                 ClassMining.StopMining();
                             }
                         }
@@ -592,19 +611,17 @@ namespace Xiropht_Solo_Miner.Mining
                         switch (splitPacket[1])
                         {
                             case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.ShareUnlock:
-                                Program.TotalBlockAccepted++;
+                                ClassMiningStats.TotalBlockAccepted++;
                                 ClassConsole.WriteLine("Block accepted, stop mining, wait new block.", ClassConsoleColorEnumeration.ConsoleTextColorGreen);
                                 break;
                             case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.ShareWrong:
-                                Program.TotalBlockRefused++;
+                                ClassMiningStats.TotalBlockRefused++;
                                 ClassConsole.WriteLine("Block not accepted, stop mining, wait new block.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                                 break;
                             case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.ShareAleady:
-                                if (Program.CurrentBlockId == splitPacket[1])
+                                if (CurrentBlockId == splitPacket[1])
                                 {
-                                    ClassConsole.WriteLine(
-                                        splitPacket[1] +
-                                        " Orphaned, someone already got it, stop mining, wait new block.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
+                                    ClassConsole.WriteLine(splitPacket[1] + " Orphaned, someone already got it, stop mining, wait new block.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
                                 }
                                 else
                                 {
@@ -616,12 +633,12 @@ namespace Xiropht_Solo_Miner.Mining
                                 ClassConsole.WriteLine("Block mined does not exist, stop mining, wait new block.", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
                                 break;
                             case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.ShareGood:
-                                Program.TotalShareAccepted++;
+                                ClassMiningStats.TotalShareAccepted++;
                                 break;
                             case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.ShareBad:
                                 ClassConsole.WriteLine(
                                     "Block not accepted, someone already got it or your share is invalid.", ClassConsoleColorEnumeration.ConsoleTextColorRed);
-                                Program.TotalShareInvalid++;
+                                ClassMiningStats.TotalShareInvalid++;
                                 break;
                         }
 
@@ -649,9 +666,7 @@ namespace Xiropht_Solo_Miner.Mining
                         {
                             CancellationTaskNetwork.Token.ThrowIfCancellationRequested();
 
-                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
-                                    .ReceiveAskListBlockMethod + ClassConnectorSetting.PacketMiningSplitSeperator,
+                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskListBlockMethod + ClassConnectorSetting.PacketMiningSplitSeperator,
                                 CertificateConnection, false, true))
                             {
                                 DisconnectNetwork();
@@ -659,12 +674,9 @@ namespace Xiropht_Solo_Miner.Mining
                             }
 
                             await Task.Delay(1000);
-                            if (Program.ListeMiningMethodContent.Count > 0)
+                            if (ListeMiningMethodContent.Count > 0)
                             {
-                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                    ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
-                                        .ReceiveAskCurrentBlockMining +
-                                    ClassConnectorSetting.PacketMiningSplitSeperator, CertificateConnection, false,
+                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskCurrentBlockMining + ClassConnectorSetting.PacketMiningSplitSeperator, CertificateConnection, false,
                                     true))
                                 {
                                     DisconnectNetwork();
@@ -680,21 +692,16 @@ namespace Xiropht_Solo_Miner.Mining
                         while (IsConnected)
                         {
                             CancellationTaskNetwork.Token.ThrowIfCancellationRequested();
-                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
-                                    .ReceiveAskListBlockMethod,
-                                string.Empty))
+                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskListBlockMethod, string.Empty))
                             {
                                 DisconnectNetwork();
                             }
 
                             await Task.Delay(1000);
 
-                            if (Program.ListeMiningMethodContent.Count > 0)
+                            if (ListeMiningMethodContent.Count > 0)
                             {
-                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                    ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration
-                                        .ReceiveAskCurrentBlockMining, string.Empty))
+                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskCurrentBlockMining, string.Empty))
                                 {
                                     DisconnectNetwork();
                                 }
