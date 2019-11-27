@@ -138,6 +138,16 @@ namespace Xiropht_Solo_Miner.Algo
 
             #endregion
 
+            #region Edit share with nonce.
+
+            byteShareArray[ClassPowSetting.OffsetShareNonceByteIndex1] = (byte)TotalNonceMining[idThread];
+            byteShareArray[ClassPowSetting.OffsetShareNonceByteIndex2] = (byte)(TotalNonceMining[idThread] >> ClassPowSetting.TargetShareNonceValueShift1);
+            byteShareArray[ClassPowSetting.OffsetShareNonceByteIndex3] = (byte)(TotalNonceMining[idThread] >> ClassPowSetting.TargetShareNonceValueShift2);
+            byteShareArray[ClassPowSetting.OffsetShareNonceByteIndex4] = (byte)(TotalNonceMining[idThread] >> ClassPowSetting.TargetShareNonceValueShift3);
+
+
+            #endregion
+
             #region Merge share done with share target.
 
             Array.Copy(byteShareArray, 0, mergedShareArray, ClassPowSetting.AmountByteShareIndex,
