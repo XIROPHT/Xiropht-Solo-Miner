@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -127,13 +128,13 @@ namespace Xiropht_Solo_Miner.Algo
             #region Edit hash target with nonce.
 
             byteTargetShareArray[ClassPowSetting.OffsetTargetShareNonceByteIndex1] =
-                (byte) TotalNonceMining[idThread];
+                (byte)TotalNonceMining[idThread];
             byteTargetShareArray[ClassPowSetting.OffsetTargetShareNonceByteIndex2] =
-                (byte) (TotalNonceMining[idThread] >> ClassPowSetting.TargetShareNonceValueShift1);
+                (byte)(TotalNonceMining[idThread] >> ClassPowSetting.TargetShareNonceValueShift1);
             byteTargetShareArray[ClassPowSetting.OffsetTargetShareNonceByteIndex3] =
-                (byte) (TotalNonceMining[idThread] >> ClassPowSetting.TargetShareNonceValueShift2);
+                (byte)(TotalNonceMining[idThread] >> ClassPowSetting.TargetShareNonceValueShift2);
             byteTargetShareArray[ClassPowSetting.OffsetTargetShareNonceByteIndex4] =
-                (byte) (TotalNonceMining[idThread] >> ClassPowSetting.TargetShareNonceValueShift3);
+                (byte)(TotalNonceMining[idThread] >> ClassPowSetting.TargetShareNonceValueShift3);
 
 
             #endregion
@@ -144,7 +145,6 @@ namespace Xiropht_Solo_Miner.Algo
             byteShareArray[ClassPowSetting.OffsetShareNonceByteIndex2] = (byte)(TotalNonceMining[idThread] >> ClassPowSetting.TargetShareNonceValueShift1);
             byteShareArray[ClassPowSetting.OffsetShareNonceByteIndex3] = (byte)(TotalNonceMining[idThread] >> ClassPowSetting.TargetShareNonceValueShift2);
             byteShareArray[ClassPowSetting.OffsetShareNonceByteIndex4] = (byte)(TotalNonceMining[idThread] >> ClassPowSetting.TargetShareNonceValueShift3);
-
 
             #endregion
 
@@ -178,10 +178,10 @@ namespace Xiropht_Solo_Miner.Algo
 
             #region Create nonce array from total nonce produced.
 
-            nonceHashingArray[ClassPowSetting.OffsetNonceByteIndex1] = (byte) TotalNonceMining[idThread];
-            nonceHashingArray[ClassPowSetting.OffsetNonceByteIndex2] = (byte) (TotalNonceMining[idThread] >> ClassPowSetting.NonceValueShift1);
-            nonceHashingArray[ClassPowSetting.OffsetNonceByteIndex3] = (byte) (TotalNonceMining[idThread] >> ClassPowSetting.NonceValueShift2);
-            nonceHashingArray[ClassPowSetting.OffsetNonceByteIndex4] = (byte) (TotalNonceMining[idThread] >> ClassPowSetting.NonceValueShift3);
+            nonceHashingArray[ClassPowSetting.OffsetNonceByteIndex1] = (byte)TotalNonceMining[idThread];
+            nonceHashingArray[ClassPowSetting.OffsetNonceByteIndex2] = (byte)(TotalNonceMining[idThread] >> ClassPowSetting.NonceValueShift1);
+            nonceHashingArray[ClassPowSetting.OffsetNonceByteIndex3] = (byte)(TotalNonceMining[idThread] >> ClassPowSetting.NonceValueShift2);
+            nonceHashingArray[ClassPowSetting.OffsetNonceByteIndex4] = (byte)(TotalNonceMining[idThread] >> ClassPowSetting.NonceValueShift3);
 
             #endregion
 
@@ -197,17 +197,21 @@ namespace Xiropht_Solo_Miner.Algo
 
 
             decimal difficultyShareValue = 0;
+            decimal totalWrongValue = 0;
+            decimal totalCalculationValue = 0;
+            decimal totalGoodValue = 0;
 
-            // From result of the math calculation.
+            #region From the result of the math calculation.
+
             for (int i = ClassPowSetting.PowDifficultyShareFromResultStartIndex;
                 i < ClassPowSetting.PowDifficultyShareFromResultEndIndex;
                 i++)
             {
                 if (i < ClassPowSetting.PowDifficultyShareFromResultEndIndex)
                 {
-                    decimal bytePowShareValue = powShareHash[i];
-                    decimal bytePowTargetShareValue = hashTarget[i];
-                    if (bytePowShareValue != 0 && bytePowTargetShareValue != 0)
+                    decimal bytePowShareValue = mergedShareArray[i];
+                    decimal bytePowTargetShareValue = byteTargetShareArray[i];
+                    if (bytePowTargetShareValue != 0)
                     {
                         if (bytePowShareValue == bytePowTargetShareValue)
                         {
@@ -215,28 +219,35 @@ namespace Xiropht_Solo_Miner.Algo
                         }
                         else if (bytePowShareValue < bytePowTargetShareValue)
                         {
-                            difficultyShareValue +=
-                                (result * ((bytePowShareValue / bytePowTargetShareValue) * 100)) / 100;
+                            difficultyShareValue += result -
+                                (firstNumber * ((bytePowShareValue / bytePowTargetShareValue) * 100)) / 100;
+                            totalWrongValue++;
                         }
                         else if (bytePowShareValue > bytePowTargetShareValue)
                         {
-                            difficultyShareValue -=
-                                (result * ((bytePowTargetShareValue / bytePowShareValue) * 100)) / 100;
+                            difficultyShareValue -= result -
+                                (secondNumber * ((bytePowTargetShareValue / bytePowShareValue) * 100)) / 100;
+                            totalWrongValue++;
                         }
                     }
+                    totalCalculationValue++;
                 }
             }
 
-            // From the first number of the math calculation.
+
+            #endregion
+
+            #region From the first number argument of the math calculation.
+
             for (int i = ClassPowSetting.PowDifficultyShareFromFirstNumberStartIndex;
                 i < ClassPowSetting.PowDifficultyShareFromFirstNumberEndIndex;
                 i++)
             {
-                if (i < ClassPowSetting.PowDifficultyShareFromFirstNumberEndIndex)
+                if (i < ClassPowSetting.PowDifficultyShareFromResultEndIndex)
                 {
-                    decimal bytePowShareValue = powShareHash[i];
-                    decimal bytePowTargetShareValue = hashTarget[i];
-                    if (bytePowShareValue != 0 && bytePowTargetShareValue != 0)
+                    decimal bytePowShareValue = mergedShareArray[i];
+                    decimal bytePowTargetShareValue = byteTargetShareArray[i];
+                    if (bytePowTargetShareValue != 0)
                     {
                         if (bytePowShareValue == bytePowTargetShareValue)
                         {
@@ -244,28 +255,35 @@ namespace Xiropht_Solo_Miner.Algo
                         }
                         else if (bytePowShareValue < bytePowTargetShareValue)
                         {
-                            difficultyShareValue +=
-                                (firstNumber * ((bytePowShareValue / bytePowTargetShareValue) * 100)) / 100;
+                            difficultyShareValue += firstNumber -
+                                (result * ((bytePowShareValue / bytePowTargetShareValue) * 100)) / 100;
+                            totalWrongValue++;
                         }
                         else if (bytePowShareValue > bytePowTargetShareValue)
                         {
-                            difficultyShareValue -=
-                                (firstNumber * ((bytePowTargetShareValue / bytePowShareValue) * 100)) / 100;
+                            difficultyShareValue -= firstNumber -
+                                (secondNumber * ((bytePowTargetShareValue / bytePowShareValue) * 100)) / 100;
+                            totalWrongValue++;
                         }
+                        totalCalculationValue++;
                     }
                 }
             }
 
-            // From the second number of the math calculation.
+
+            #endregion
+
+            #region From the second number argument of the math calculation.
+
             for (int i = ClassPowSetting.PowDifficultyShareFromSecondNumberStartIndex;
                 i < ClassPowSetting.PowDifficultyShareFromSecondtNumberEndIndex;
                 i++)
             {
-                if (i < ClassPowSetting.PowDifficultyShareFromSecondtNumberEndIndex)
+                if (i < ClassPowSetting.PowDifficultyShareFromResultEndIndex)
                 {
-                    decimal bytePowShareValue = powShareHash[i];
-                    decimal bytePowTargetShareValue = hashTarget[i];
-                    if (bytePowShareValue != 0 && bytePowTargetShareValue != 0)
+                    decimal bytePowShareValue = mergedShareArray[i];
+                    decimal bytePowTargetShareValue = byteTargetShareArray[i];
+                    if (bytePowTargetShareValue != 0)
                     {
                         if (bytePowShareValue == bytePowTargetShareValue)
                         {
@@ -273,22 +291,50 @@ namespace Xiropht_Solo_Miner.Algo
                         }
                         else if (bytePowShareValue < bytePowTargetShareValue)
                         {
-                            difficultyShareValue +=
-                                (secondNumber * ((bytePowShareValue / bytePowTargetShareValue) * 100)) / 100;
+                            difficultyShareValue += secondNumber -
+                                (result * ((bytePowShareValue / bytePowTargetShareValue) * 100)) / 100;
+                            totalWrongValue++;
                         }
                         else if (bytePowShareValue > bytePowTargetShareValue)
                         {
-                            difficultyShareValue -=
-                                (secondNumber * ((bytePowTargetShareValue / bytePowShareValue) * 100)) / 100;
+                            difficultyShareValue -= secondNumber -
+                                (firstNumber * ((bytePowTargetShareValue / bytePowShareValue) * 100)) / 100;
+                            totalWrongValue++;
                         }
+                        totalCalculationValue++;
                     }
                 }
             }
 
+            #endregion
 
-            difficultyShareValue = Math.Round(difficultyShareValue, 0);
 
+            if (difficultyShareValue != 0)
+            {
 
+                totalGoodValue = totalCalculationValue - totalWrongValue;
+
+                difficultyShareValue = (difficultyShareValue * totalGoodValue) / 100;
+
+                if (difficultyShareValue >= result)
+                {
+                    difficultyShareValue /= result;
+                }
+                else if (difficultyShareValue >= firstNumber)
+                {
+                    difficultyShareValue /= firstNumber;
+                }
+                else if (difficultyShareValue >= secondNumber)
+                {
+                    difficultyShareValue /= secondNumber;
+                }
+                else
+                {
+                    difficultyShareValue = 0;
+                }
+
+                difficultyShareValue = Math.Round(difficultyShareValue, 0);
+            }
             #endregion
 
             TotalNonceMining[idThread]++;
