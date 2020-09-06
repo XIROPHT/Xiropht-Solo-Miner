@@ -131,6 +131,7 @@ namespace Xiropht_Solo_Miner
         /// </summary>
         private static void InitializeMiner()
         {
+            ClassUtility.Lookup32 = ClassUtility.CreateLookup32();
             if (File.Exists(ClassUtility.ConvertPath(_configFile)))
             {
                 if (LoadConfig())
@@ -406,7 +407,7 @@ namespace Xiropht_Solo_Miner
                 if (!configContent.Contains("mining_enable_automatic_thread_affinity") ||
                     !configContent.Contains("mining_manual_thread_affinity") ||
                     !configContent.Contains("mining_enable_cache") ||
-                    !configContent.Contains("mining_show_calculation_speed") || !configContent.Contains("mining_enable_pow_mining_way"))
+                    !configContent.Contains("mining_show_calculation_speed"))
                 {
                     ClassConsole.WriteLine(
                         "Config.json has been updated, a new option has been implemented.",
@@ -424,7 +425,7 @@ namespace Xiropht_Solo_Miner
             if (!configContent.Contains("mining_enable_automatic_thread_affinity") ||
                 !configContent.Contains("mining_manual_thread_affinity") ||
                 !configContent.Contains("mining_enable_cache") ||
-                !configContent.Contains("mining_show_calculation_speed") || !configContent.Contains("mining_enable_pow_mining_way"))
+                !configContent.Contains("mining_show_calculation_speed"))
             {
                 ClassConsole.WriteLine(
                     "Config.json has been updated, mining thread affinity, mining cache settings are implemented, close your solo miner and edit those settings if you want to enable them.",

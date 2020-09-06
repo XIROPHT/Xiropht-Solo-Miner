@@ -586,7 +586,7 @@ namespace Xiropht_Solo_Miner.Mining
                                 ClassMining.CurrentRoundAesSize = int.Parse(splitMethod[1]);
                                 ClassMining.CurrentRoundAesKey = splitMethod[2];
                                 ClassMining.CurrentRoundXorKey = int.Parse(splitMethod[3]);
-
+                                ClassMining.CurrentRoundXorKeyStr = splitMethod[3];
 
 
                                 for (int i = 0; i < Program.ClassMinerConfigObject.mining_thread; i++)
@@ -594,8 +594,20 @@ namespace Xiropht_Solo_Miner.Mining
                                     if (i < Program.ClassMinerConfigObject.mining_thread)
                                     {
                                         int iThread = i;
-                                        ClassMining.ThreadMining[i] = new Task(() => ClassMining.InitializeMiningThread(iThread), ClassMining.CancellationTaskMining.Token);
-                                        ClassMining.ThreadMining[i].Start();
+                                        try
+                                        {
+                                            
+                                            ClassMining.ThreadMining[i] = new Task(() => ClassMining.InitializeMiningThread(iThread), ClassMining.CancellationTaskMining.Token);
+                                            var i1 = i;
+                                            await Task.Factory.StartNew(() =>
+                                            {
+                                                ClassMining.ThreadMining[i1].Start();
+                                            }, ClassMining.CancellationTaskMining.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current).ConfigureAwait(false);
+                                        }
+                                        catch
+                                        {
+                                            // Catch the exception, once the task is cancelled.
+                                        }
                                     }
                                 }
                             }

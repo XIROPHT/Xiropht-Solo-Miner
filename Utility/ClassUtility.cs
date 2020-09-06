@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -94,8 +96,10 @@ namespace Xiropht_Solo_Miner.Utility
         }
     }
 
+
     public class ClassUtility
     {
+
         private static readonly char[] HexArrayList = "0123456789ABCDEF".ToCharArray();
 
         /// <summary>
@@ -127,14 +131,20 @@ namespace Xiropht_Solo_Miner.Utility
             return path;
         }
 
+
         /// <summary>
         /// Convert a string into hex string.
         /// </summary>
         /// <param name="hex"></param>
+        /// <param name="useNextHex"></param>
         /// <returns></returns>
-        public static string StringToHex(string hex)
+        public static string StringToHex(string hex, bool useNextHex)
         {
-            return BitConverter.ToString(Encoding.UTF8.GetBytes(hex)).Replace("-", "");
+            if (!useNextHex)
+            {
+                return BitConverter.ToString(Encoding.UTF8.GetBytes(hex)).Replace("-", "");
+            }
+            return GetHexStringFromByteArray2(Encoding.UTF8.GetBytes(hex));
         }
 
         /// <summary>
@@ -156,26 +166,91 @@ namespace Xiropht_Solo_Miner.Utility
             return sb.ToString();
         }
 
+        public static uint[] Lookup32;
+
+        /// <summary>
+        /// Create a lookup conversation for accelerate byte array conversion into hex string.
+        /// </summary>
+        /// <returns></returns>
+        public static uint[] CreateLookup32()
+        {
+            var result = new uint[256];
+            for (int i = 0; i < 256; i++)
+            {
+                string s = i.ToString("X2");
+                result[i] = ((uint)s[0]) + ((uint)s[1] << 16);
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// Convert a byte array to hex string.
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        public static string GetHexStringFromByteArray2(byte[] bytes)
+        {
+            var lookup32 = Lookup32;
+            char[] result = new char[bytes.Length * 2]; 
+            
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                var val = lookup32[bytes[i]];
+                result[2 * i] = (char)val;
+                result[2 * i + 1] = (char)(val >> 16);
+            }
+
+
+            return new string(result, 0, result.Length);
+        }
+
+
         /// <summary>
         /// Convert a byte array to hex string like Bitconverter class.
         /// </summary>
         /// <param name="value"></param>
-        /// <param name="startIndex"></param>
-        /// <param name="length"></param>
+        /// <param name="useNextOption"></param>
         /// <returns></returns>
-        public static string GetHexStringFromByteArray(byte[] value, int startIndex, int length)
+        public static string GetHexStringFromByteArray(byte[] value, bool useNextOption)
         {
-            int newSize = length * 3;
-            char[] hexCharArray = new char[newSize];
-            int currentIndex;
-            for (currentIndex = 0; currentIndex < newSize; currentIndex += 3)
+            if (!useNextOption)
             {
-                byte currentByte = value[startIndex++];
-                hexCharArray[currentIndex] = GetHexValue(currentByte / 0x10);
-                hexCharArray[currentIndex + 1] = GetHexValue(currentByte % 0x10);
-                hexCharArray[currentIndex + 2] = '-';
+                int startIndex = 0;
+                int newSize = value.Length * 3;
+                char[] hexCharArray = new char[newSize];
+                int currentIndex;
+                for (currentIndex = 0; currentIndex < newSize; currentIndex += 3)
+                {
+
+                    byte currentByte = value[startIndex++];
+                    hexCharArray[currentIndex] = GetHexValue(currentByte / 0x10);
+                    hexCharArray[currentIndex + 1] = GetHexValue(currentByte % 0x10);
+
+
+                    hexCharArray[currentIndex + 2] = '-';
+                }
+                return new string(hexCharArray, 0, hexCharArray.Length - 1);
             }
-            return new string(hexCharArray, 0, hexCharArray.Length - 1);
+            else
+            {
+                int startIndex = 0;
+                var lookup32 = Lookup32;
+                int newSize = value.Length * 3;
+                char[] hexCharArray = new char[newSize];
+                int currentIndex;
+
+                for (currentIndex = 0; currentIndex < newSize; currentIndex += 3)
+                {
+                    var val = lookup32[value[startIndex++]];
+                    hexCharArray[currentIndex] = (char)val;
+                    hexCharArray[currentIndex + 1] = (char)(val >> 16);
+                    hexCharArray[currentIndex+ 2] = '-';
+                }
+
+
+                return new string(hexCharArray, 0, hexCharArray.Length-1);
+            }
         }
 
         /// <summary>
@@ -192,22 +267,6 @@ namespace Xiropht_Solo_Miner.Utility
             return (char)((i - 10) + 0x41);
         }
 
-        /// <summary>
-        /// Convert a byte array into a hex string
-        /// </summary>
-        /// <param name="bytes"></param>
-        /// <returns></returns>
-        public static string ByteArrayToHexString(byte[] bytes)
-        {
-            char[] hexChars = new char[(bytes.Length * 2)];
-            for (int j = 0; j < bytes.Length; j++)
-            {
-                int v = bytes[j] & 255;
-                hexChars[j * 2] = HexArrayList[(int)((uint)v >> 4)];
-                hexChars[(j * 2) + 1] = HexArrayList[v & 15];
-            }
-            return new string(hexChars);
-        }
 
     }
 }

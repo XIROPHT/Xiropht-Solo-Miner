@@ -31,8 +31,9 @@ namespace Xiropht_Solo_Miner.Algo
         /// </summary>
         /// <param name="text"></param>
         /// <param name="idThread"></param>
+        /// <param name="useNextHexOption"></param>
         /// <returns></returns>
-        public static string EncryptAesShare(string text, int idThread)
+        public static string EncryptAesShare(string text, int idThread, bool useNextHexOption)
         {
             if (MemoryStreamMining[idThread] == null)
             {
@@ -58,23 +59,20 @@ namespace Xiropht_Solo_Miner.Algo
                 CryptoStreamMining[idThread].FlushFinalBlock();
                 CryptoStreamMining[idThread].Flush();
             }
- 
+
 
             #endregion
 
             #region Translate Mining work
 
-            byte[] resultByteShare = MemoryStreamMining[idThread].ToArray();
-            string result = ClassUtility.GetHexStringFromByteArray(resultByteShare, 0, resultByteShare.Length);
-
+            string result = ClassUtility.GetHexStringFromByteArray(MemoryStreamMining[idThread].ToArray(), useNextHexOption);
+            
             #endregion
 
             #region Cleanup work
             CryptoStreamMining[idThread] = new CryptoStream(MemoryStreamMining[idThread], CryptoTransformMining[idThread], CryptoStreamMode.Write);
             MemoryStreamMining[idThread].SetLength(0);
-            Array.Clear(resultByteShare, 0, resultByteShare.Length);
             Array.Clear(textBytes, 0, textBytes.Length);
-
             #endregion
 
             return result;
@@ -91,9 +89,11 @@ namespace Xiropht_Solo_Miner.Algo
         {
             char[] resultXor = new char[text.Length];
 
+            int keyLength = key.Length;
+
             for (int c = 0; c < text.Length; c++)
             {
-                resultXor[c] = (char)(text[c] ^ (uint)key[c % key.Length]);
+                resultXor[c] = (char)(text[c] ^ (uint)key[c % keyLength]);
             }
             return new string(resultXor, 0, resultXor.Length);
         }
@@ -111,9 +111,7 @@ namespace Xiropht_Solo_Miner.Algo
                 Sha512ManagedMining[idThread] = new SHA512Managed();
             }
 
-            var bytes = Encoding.UTF8.GetBytes(input);
-
-           return ClassUtility.ByteArrayToHexString(Sha512ManagedMining[idThread].ComputeHash(bytes));
+            return ClassUtility.GetHexStringFromByteArray2(Sha512ManagedMining[idThread].ComputeHash(Encoding.UTF8.GetBytes(input)));
 
         }
 

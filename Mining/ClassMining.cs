@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
@@ -42,6 +43,7 @@ namespace Xiropht_Solo_Miner.Mining
         public static int CurrentRoundAesSize;
         public static string CurrentRoundAesKey;
         public static int CurrentRoundXorKey;
+        public static string CurrentRoundXorKeyStr;
 
         /// <summary>
         /// Initialize every mining objects necessary to use.
@@ -119,7 +121,7 @@ namespace Xiropht_Solo_Miner.Mining
                                         {
 
                                             ThreadMining[i].Dispose();
-                                            GC.SuppressFinalize(ThreadMining[i]);
+                                            //GC.SuppressFinalize(ThreadMining[i]);
 
                                         }
                                     }
@@ -178,7 +180,7 @@ namespace Xiropht_Solo_Miner.Mining
                 }
             }
 
-            using (var pdb = new PasswordDeriveBytes(ClassMiningNetwork.CurrentBlockKey,  Encoding.UTF8.GetBytes(CurrentRoundAesKey)))
+            using (var pdb = new PasswordDeriveBytes(ClassMiningNetwork.CurrentBlockKey, Encoding.UTF8.GetBytes(CurrentRoundAesKey)))
             {
                 _currentAesKeyBytes = pdb.GetBytes(CurrentRoundAesSize / 8);
                 _currentAesIvBytes = pdb.GetBytes(CurrentRoundAesSize / 8);
@@ -226,33 +228,42 @@ namespace Xiropht_Solo_Miner.Mining
                     break;
             }
 
-            if (Program.ClassMinerConfigObject.mining_thread_spread_job)
+            try
             {
-                if (Program.ClassMinerConfigObject.mining_enable_proxy)
+                if (Program.ClassMinerConfigObject.mining_thread_spread_job)
                 {
-                    if (minRange > 0)
+                    if (Program.ClassMinerConfigObject.mining_enable_proxy)
                     {
-                        decimal minRangeTmp = minRange;
-                        decimal maxRangeTmp = minRangeTmp + incrementProxyRange;
-                        await StartMiningAsync(iThread, Math.Round(minRangeTmp), (Math.Round(maxRangeTmp)));
+                        if (minRange > 0)
+                        {
+                            decimal minRangeTmp = minRange;
+                            decimal maxRangeTmp = minRangeTmp + incrementProxyRange;
+
+                            await StartMiningAsync(iThread, Math.Round(minRangeTmp), (Math.Round(maxRangeTmp)));
+
+                        }
+                        else
+                        {
+                            decimal minRangeTmp = Math.Round((maxRange / Program.ClassMinerConfigObject.mining_thread) * (i1 - 1), 0);
+                            decimal maxRangeTmp = (Math.Round(((maxRange / Program.ClassMinerConfigObject.mining_thread) * i1)));
+                            await StartMiningAsync(iThread, minRangeTmp, maxRangeTmp);
+                        }
                     }
                     else
                     {
-                        decimal minRangeTmp = Math.Round((maxRange / Program.ClassMinerConfigObject.mining_thread) * (i1 - 1),  0);
+                        decimal minRangeTmp = Math.Round((maxRange / Program.ClassMinerConfigObject.mining_thread) * (i1 - 1));
                         decimal maxRangeTmp = (Math.Round(((maxRange / Program.ClassMinerConfigObject.mining_thread) * i1)));
                         await StartMiningAsync(iThread, minRangeTmp, maxRangeTmp);
                     }
                 }
                 else
                 {
-                    decimal minRangeTmp = Math.Round((maxRange / Program.ClassMinerConfigObject.mining_thread) * (i1 - 1));
-                    decimal maxRangeTmp = (Math.Round(((maxRange / Program.ClassMinerConfigObject.mining_thread) * i1)));
-                    await StartMiningAsync(iThread, minRangeTmp, maxRangeTmp);
+                    await StartMiningAsync(iThread, minRange, maxRange);
                 }
             }
-            else
+            catch
             {
-                await StartMiningAsync(iThread, minRange, maxRange);
+                // Ignored, catch the exception once the task is cancelled.
             }
         }
 
@@ -820,24 +831,22 @@ namespace Xiropht_Solo_Miner.Mining
         /// <returns></returns>
         public static string MakeEncryptedShare(string calculation, int idThread)
         {
-
-            string encryptedShare = ClassUtility.StringToHex(calculation + ClassMiningNetwork.CurrentBlockTimestampCreate);
+            string encryptedShare = ClassUtility.StringToHex(calculation + ClassMiningNetwork.CurrentBlockTimestampCreate, true);
 
             // Static XOR Encryption -> Key updated from the current mining method.
-            encryptedShare = ClassAlgoMining.EncryptXorShare(encryptedShare, CurrentRoundXorKey.ToString());
+            encryptedShare = ClassAlgoMining.EncryptXorShare(encryptedShare, CurrentRoundXorKeyStr);
 
             // Dynamic AES Encryption -> Size and Key's from the current mining method and the current block key encryption.
             for (int i = 0; i < CurrentRoundAesRound; i++)
             {
-                encryptedShare = ClassAlgoMining.EncryptAesShare(encryptedShare, idThread);
+                encryptedShare = ClassAlgoMining.EncryptAesShare(encryptedShare, idThread, true);
             }
 
             // Static XOR Encryption -> Key from the current mining method
-            encryptedShare = ClassAlgoMining.EncryptXorShare(encryptedShare, CurrentRoundXorKey.ToString());
+            encryptedShare = ClassAlgoMining.EncryptXorShare(encryptedShare, CurrentRoundXorKeyStr);
 
             // Static AES Encryption -> Size and Key's from the current mining method.
-            encryptedShare = ClassAlgoMining.EncryptAesShare(encryptedShare, idThread);
-
+            encryptedShare = ClassAlgoMining.EncryptAesShare(encryptedShare, idThread, true);
 
             // Generate SHA512 HASH for the share and return it.
             return ClassAlgoMining.GenerateSha512FromString(encryptedShare, idThread);
