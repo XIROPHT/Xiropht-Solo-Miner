@@ -30,15 +30,17 @@
 - ./Xiropht-Solo-Miner
 ~~~
 
+**A batch script has been provided to show a better example here: https://github.com/XIROPHT/Xiropht-Solo-Miner/tree/master/MonoScript**
+
 The config.ini file of the miner is initialized after the first running.
 
 This release as been compiled into Debug Mode, because we are currently in private test.
 
-Hashrate test [Updated 31/08/2019]:
+Hashrate test [Updated 14/09/2020]:
 
--> Raspberry PI 3 (On Raspberian OS): 7,2 KH/s.
+-> Raspberry PI 3 (On Raspberian OS): 9,2 KH/s.
 
--> Ryzen 7 2700x No OC (On Windows 10): 135 to 155 KH/s.
+-> Ryzen 7 2700x No OC (On Windows 10): 390 to 400 KH/s.
 
 
 <h3>Help:</h3>
