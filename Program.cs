@@ -51,6 +51,9 @@ namespace Xiropht_Solo_Miner
             ClassConsole.WriteLine("Xiropht Solo Miner - " + Assembly.GetExecutingAssembly().GetName().Version + "R", ClassConsoleColorEnumeration.ConsoleTextColorMagenta);
 
             HandleArgumentStartup(args);
+
+            WriteAppConfigContent();
+
             LoadWalletAddressCache();
             InitializeMiner();
             EnableConsoleKeyCommand();
@@ -111,6 +114,29 @@ namespace Xiropht_Solo_Miner
             if (!enableCustomConfigPath)
             {
                 _configFile = ClassUtility.GetCurrentPathConfig(_configFile);
+            }
+        }
+
+        /// <summary>
+        /// Write optimized app config arguments.
+        /// </summary>
+        private static void WriteAppConfigContent()
+        {
+            string appConfigFilePath = ClassUtility.ConvertPath(Process.GetCurrentProcess().MainModule.FileName + ".config");
+
+            bool needRestart = !File.Exists(appConfigFilePath);
+
+            using (StreamWriter writer = new StreamWriter(appConfigFilePath))
+            {
+                writer.Write(ClassStartupArgumentEnumeration.AppConfigContent);
+            }
+
+            if (needRestart)
+            {
+                ClassConsole.WriteLine("The application configuration file has been saved, please restart your miner to take in count the optimized arguments of configuration.", ClassConsoleColorEnumeration.ConsoleTextCyan);
+                ClassConsole.WriteLine("Press a key to exit.");
+                Console.ReadLine();
+                Process.GetCurrentProcess().Kill(); 
             }
         }
 

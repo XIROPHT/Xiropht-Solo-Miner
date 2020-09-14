@@ -13,6 +13,7 @@ namespace Xiropht_Solo_Miner.ConsoleMiner
         public const int ConsoleTextColorRed = 3;
         public const int ConsoleTextColorMagenta = 4;
         public const int ConsoleTextColorBlue = 5;
+        public const int ConsoleTextCyan = 6;
     }
 
     public class ClassConsoleKeyCommandEnumeration
@@ -55,6 +56,9 @@ namespace Xiropht_Solo_Miner.ConsoleMiner
                 case ClassConsoleColorEnumeration.ConsoleTextColorBlue:
                     Console.ForegroundColor = ConsoleColor.Blue;
                     break;
+                case ClassConsoleColorEnumeration.ConsoleTextCyan:
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    break; ;
             }
 
             Console.WriteLine(DateTime.Now + " - " + log);

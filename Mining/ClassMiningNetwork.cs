@@ -598,11 +598,7 @@ namespace Xiropht_Solo_Miner.Mining
                                         {
                                             
                                             ClassMining.ThreadMining[i] = new Task(() => ClassMining.InitializeMiningThread(iThread), ClassMining.CancellationTaskMining.Token);
-                                            var i1 = i;
-                                            await Task.Factory.StartNew(() =>
-                                            {
-                                                ClassMining.ThreadMining[i1].Start();
-                                            }, ClassMining.CancellationTaskMining.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current).ConfigureAwait(false);
+                                            ClassMining.ThreadMining[i].Start();
                                         }
                                         catch
                                         {

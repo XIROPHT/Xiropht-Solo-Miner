@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Xiropht")]
 [assembly: AssemblyProduct("Xiropht Solo Miner")]
-[assembly: AssemblyCopyright("Copyright © Xiropht Developer 2019")]
+[assembly: AssemblyCopyright("Copyright © Xiropht Developer 2020")]
 [assembly: AssemblyTrademark("Xiropht")]
 [assembly: AssemblyCulture("")]
 
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // Vous pouvez spécifier toutes les valeurs ou indiquer les numéros de build et de révision par défaut
 // en utilisant '*', comme indiqué ci-dessous :
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.7.4.0")]
-[assembly: AssemblyFileVersion("0.7.4.0")]
+[assembly: AssemblyVersion("0.7.4.1")]
+[assembly: AssemblyFileVersion("0.7.4.1")]
